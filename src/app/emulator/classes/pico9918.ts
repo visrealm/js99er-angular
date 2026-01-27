@@ -30,11 +30,15 @@ export class PICO9918 extends F18A {
     }
 
     protected override getCanvasSize(): { width: number, height: number } {
-        return { width: 320, height: 240 };
+        return { width: 640, height: 480 };
     }
 
-    protected override shouldDoublePixels(): boolean {
-        return this.screenMode === F18A.MODE_TEXT_80;
+    protected override isDoubledH(): boolean {
+        return this.screenMode !== F18A.MODE_TEXT_80;
+    }
+
+    protected override isDoubledV(): boolean {
+        return (this.registers[0] & 0x08) === 0;
     }
 
     protected override drawSplash() {
@@ -42,7 +46,6 @@ export class PICO9918 extends F18A {
             return;
         }
         const inset = 2;
-        const drawW = this.splashImage.width;
         const drawH = this.splashImage.height;
         // Slide up: 1 pixel every 2 frames, using scaled height
         const slideFrames = drawH * 2;

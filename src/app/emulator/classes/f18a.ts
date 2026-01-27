@@ -112,7 +112,7 @@ export class F18A implements VDP {
     // Allocate full 64K, but actually only using 16K VDP RAM + 2K VDP GRAM
     // + 32 bytes for GPU registers
     private ram: Uint8Array;
-    private registers = new Uint8Array(64);
+    protected registers = new Uint8Array(64);
     private addressRegister: number;
     private statusRegister: number;
     private palette: number[][];
@@ -420,8 +420,8 @@ export class F18A implements VDP {
         }
         this.drawWidth = this.screenMode === F18A.MODE_TEXT_80 ? 512 : 256;
         this.drawHeight = this.row30Enabled ? 240 : 192;
-        this.leftBorder = Math.floor((this.canvasWidth - this.drawWidth) >> 1);
-        this.topBorder = Math.floor(((this.canvasHeight >> (this.shouldDoublePixels() ? 1 : 0)) - this.drawHeight) >> 1);
+        this.leftBorder = Math.floor((this.canvasWidth - (this.drawWidth << (this.isDoubledH() ? 1 : 0))) >> 1);
+        this.topBorder = Math.floor(((this.canvasHeight >> (this.isDoubledV() ? 1 : 0)) - this.drawHeight) >> 1);
         if (newDimensions) {
             this.fillCanvas(this.bgColor);
             this.imageData = new ImageData(new Uint8ClampedArray(this.wasmService.getMemoryBuffer(), imageDataAddr, (this.canvasWidth * this.canvasHeight) << 2), this.canvasWidth, this.canvasHeight);
@@ -499,7 +499,8 @@ export class F18A implements VDP {
             this.colorTableMask,
             this.fgColor,
             this.statusRegister,
-            this.shouldDoublePixels()
+            this.isDoubledH(),
+            this.isDoubledV()
         );
 
         this.blanking = 1; // GPU code after scanline may depend on this
@@ -1160,7 +1161,11 @@ export class F18A implements VDP {
         return 0xe0;
     }
 
-    protected shouldDoublePixels(): boolean {
+    protected isDoubledH(): boolean {
+        return false;
+    }
+
+    protected isDoubledV(): boolean {
         return this.screenMode === F18A.MODE_TEXT_80;
     }
 

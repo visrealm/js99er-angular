@@ -79,9 +79,10 @@ export function drawScanline(
     colorTableMask: i32,
     fgColor: i32,
     statusRegister: u8,
-    doublePixels: bool
+    doublePixelsH: bool,
+    doublePixelsV: bool
 ): u8 {
-    let pixelOffset: i32 = (y * width) << (doublePixels ? 1 : 0);
+    let pixelOffset: i32 = (y * width) << (doublePixelsV ? 1 : 0);
     if (displayOn && y >= topBorder && y < topBorder + drawHeight) {
         y -= topBorder;
         // Prepare sprites
@@ -181,8 +182,9 @@ export function drawScanline(
             // Draw pixel
             let color: i32 = bgColor;
             let paletteBaseIndex: i32 = 0;
-            if (xc >= leftBorder && xc < leftBorder + drawWidth) {
-                const x: i32 = xc - leftBorder;
+            const activeWidth: i32 = drawWidth << (doublePixelsH ? 1 : 0);
+            if (xc >= leftBorder && xc < leftBorder + activeWidth) {
+                const x: i32 = doublePixelsH ? ((xc - leftBorder) >> 1) : (xc - leftBorder);
                 let havePixel: bool = false,
                     tilePriority: bool = false;
                 // Tile layer 1
@@ -312,7 +314,7 @@ export function drawScanline(
             setImageData(pixelOffset2++, dimmedRgbColor);
         }
     }
-    if (doublePixels) {
+    if (doublePixelsV) {
         duplicateLastScanline(pixelOffset, width);
     }
     return statusRegister;
