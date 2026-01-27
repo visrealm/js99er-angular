@@ -3,12 +3,14 @@ import {F18AGPU} from './f18a-gpu';
 import {PICO9918GPU} from './pico9918-gpu';
 import {TI994A} from './ti994a';
 import {WasmService} from '../../services/wasm.service';
+import {Log} from '../../classes/log';
 import {VDPType} from '../../classes/settings';
 
 export class PICO9918 extends F18A {
 
     constructor(canvas: HTMLCanvasElement, console: TI994A, wasmService: WasmService) {
-        super(canvas, console, wasmService);
+        Log.getLog().info("PICO9918 emulation enabled");
+        super(canvas, console, wasmService, false);        
     }
 
     override getType(): VDPType {
@@ -28,11 +30,11 @@ export class PICO9918 extends F18A {
     }
 
     protected override getCanvasSize(): { width: number, height: number } {
-        return { width: 640, height: 480 };
+        return { width: 320, height: 240 };
     }
 
     protected override shouldDoublePixels(): boolean {
-        return true;
+        return this.screenMode === F18A.MODE_TEXT_80;
     }
 
     protected override drawSplash() {

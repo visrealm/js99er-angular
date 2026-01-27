@@ -132,7 +132,7 @@ export class F18A implements VDP {
 
     private displayOn: boolean;
     private interruptsOn: boolean;
-    private screenMode: number;
+    protected screenMode: number;
     private colorTable: number;
     private nameTable: number;
     private charPatternTable: number;
@@ -206,9 +206,9 @@ export class F18A implements VDP {
 
     private spritePatternColorMap: {};
 
-    private log: Log = Log.getLog();
+    protected log: Log = Log.getLog();
 
-    constructor(canvas: HTMLCanvasElement, console: TI994A, wasmService: WasmService) {
+    constructor(canvas: HTMLCanvasElement, console: TI994A, wasmService: WasmService, logging:boolean = true) {
         this.canvas = canvas;
         this.console = console;
         this.wasmService = wasmService;
@@ -223,7 +223,7 @@ export class F18A implements VDP {
             this.splashImage = imageObj;
         };
         imageObj.src = this.getSplashImagePath();
-        this.log.info("F18A emulation enabled");
+        if (logging) this.log.info(this.getType() + " emulation enabled");
     }
 
     getGPU() {
@@ -369,7 +369,7 @@ export class F18A implements VDP {
     }
 
     resetRegs() {
-        this.log.info("F18A reset");
+        this.log.info(this.getType() + " reset");
         this.log.setMinLevel(LogLevel.NONE);
         this.writeRegister(0, 0);
         this.writeRegister(1, 0x40);
@@ -641,7 +641,7 @@ export class F18A implements VDP {
             // Status register select / counter control
             case 15:
                 this.statusRegisterNo = this.registers[15] & 0x0f;
-                this.log.debug("F18A status register " + this.statusRegisterNo + " selected.");
+                this.log.debug(this.getType() +  " status register " + this.statusRegisterNo + " selected.");
                 const wasRunning: boolean = (oldValue & 0x10) !== 0;
                 const running: boolean = (this.registers[15] & 0x10) !== 0;
                 if (wasRunning && !running) {
@@ -667,13 +667,13 @@ export class F18A implements VDP {
                     this.counterElapsed = 0;
                     this.counterStart = this.getTime();
                     this.counterSnap = 0;
-                    this.registers[15] &= 0xbf; // Clear trigger bit
+                    this.registers[15] &= 0xbf; // Clear trigger bit2
                 }
                 break;
             // Horz interrupt scan line, 0 to disable
             case 19:
                 this.interruptScanline = this.registers[19];
-                this.log.info("F18A interrupt scanline set to " + Util.toHexByte(this.interruptScanline) + " (not implemented)");
+                this.log.info(this.getType() + " interrupt scanline set to " + Util.toHexByte(this.interruptScanline) + " (not implemented)");
                 break;
             // Palette select
             case 24:
@@ -767,9 +767,9 @@ export class F18A implements VDP {
                 this.paletteRegisterNo = this.registers[47] & 0x3f;
                 this.paletteRegisterData = -1;
                 if (this.dataPortMode) {
-                    this.log.info("F18A Data port mode on.");
+                    this.log.info(this.getType() + " Data port mode on.");
                 } else {
-                    this.log.info("F18A Data port mode off.");
+                    this.log.info(this.getType() + " Data port mode off.");
                 }
                 break;
             // SIGNED two's-complement increment amount for VRAM address, defaults to 1
@@ -786,13 +786,13 @@ export class F18A implements VDP {
                     this.log.info("30 rows mode " + (this.row30Enabled ? "enabled" : "disabled") + ".");
                 }
                 this.tileColorMode = (this.registers[49] & 0x30) >> 4;
-                this.log.info("F18A Enhanced Color Mode " + this.tileColorMode + " selected for tiles.");
+                this.log.info(this.getType() + " Enhanced Color Mode " + this.tileColorMode + " selected for tiles.");
                 this.realSpriteYCoord = (this.registers[49] & 0x08) !== 0;
                 if (this.getVersion() <= 0x18) {
                     this.spriteLinkingEnabled = (this.registers[49] & 0x04) !== 0;
                 }
                 this.spriteColorMode = this.registers[49] & 0x03;
-                this.log.info("F18A Enhanced Color Mode " + this.spriteColorMode + " selected for sprites.");
+                this.log.info(this.getType() + " Enhanced Color Mode " + this.spriteColorMode + " selected for sprites.");
                 break;
             // Position vs name attributes, TL2 always on top
             case 50:
@@ -805,11 +805,11 @@ export class F18A implements VDP {
                 }
                 this.gpuHsyncTrigger = (this.registers[50] & 0x40) !== 0;
                 if (this.gpuHsyncTrigger) {
-                    this.log.debug("F18A Hsync trigger set");
+                    this.log.debug(this.getType() + " Hsync trigger set");
                 }
                 this.gpuVsyncTrigger = (this.registers[50] & 0x20) !== 0;
                 if (this.gpuVsyncTrigger) {
-                    this.log.info("F18A Vsync trigger set");
+                    this.log.info(this.getType() + " Vsync trigger set");
                 }
                 // 0 = normal, 1 = disable GM1, GM2, MCM, T40, T80
                 this.tileLayer1Enabled = (this.registers[50] & 0x10) === 0;
@@ -834,7 +834,7 @@ export class F18A implements VDP {
             // GPU address LSB
             case 55:
                 this.gpu.intReset();
-                this.log.info("F18A GPU triggered at " + Util.toHexWord((this.registers[54] << 8) | this.registers[55]));
+                this.log.info(this.getType() + " GPU triggered at " + Util.toHexWord((this.registers[54] << 8) | this.registers[55]));
                 this.gpu.setPc(this.registers[54] << 8 | this.registers[55]);
                 break;
             case 56:
@@ -843,19 +843,19 @@ export class F18A implements VDP {
                 } else {
                     this.gpu.setPc(this.registers[54] << 8 | this.registers[55]);
                     this.gpu.setIdle(true);
-                    this.log.info("F18A GPU stopped.");
+                    this.log.info(this.getType() + " GPU stopped.");
                 }
                 break;
             case 57:
                 if (!this.unlocked) {
                     if ((oldValue & 0x1c) === 0x1c && (this.registers[57] & 0x1c) === 0x1c) {
                         this.unlocked = true;
-                        this.log.info("F18A unlocked");
+                        this.log.info(this.getType() + " unlocked");
                     }
                 } else {
                     this.registers[57] = 0;
                     this.unlocked = false;
-                    this.log.info("F18A locked");
+                    this.log.info(this.getType() + " locked");
                 }
                 this.updateMode(this.registers[0], this.registers[1]);
                 break;
@@ -954,7 +954,7 @@ export class F18A implements VDP {
                 this.palette[this.paletteRegisterNo][1] = ((b & 0xf0) >> 4) * 17;
                 this.palette[this.paletteRegisterNo][2] = (b & 0x0f) * 17;
                 this.writePaletteEntryToWasm(this.paletteRegisterNo);
-                // this.log.info("F18A palette register " + this.paletteRegisterNo.toHexByte() + " set to " + (this.paletteRegisterData << 8 | b).toHexWord());
+                // this.log.info(this.getType() + " palette register " + this.paletteRegisterNo.toHexByte() + " set to " + (this.paletteRegisterData << 8 | b).toHexWord());
                 if (this.autoIncPaletteReg) {
                     this.paletteRegisterNo++;
                 }
@@ -963,7 +963,7 @@ export class F18A implements VDP {
                 if (!this.autoIncPaletteReg || this.paletteRegisterNo === 64) {
                     this.dataPortMode = false;
                     this.paletteRegisterNo = 0;
-                    this.log.info("F18A Data port mode off (auto).");
+                    this.log.info(this.getType() + " Data port mode off (auto).");
                 }
                 this.paletteRegisterData = -1;
             }
