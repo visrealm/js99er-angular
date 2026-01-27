@@ -29,6 +29,7 @@ export class GraphicsComponent implements OnInit, AfterViewInit, OnChanges {
     tileCanvasMiddleVisible = false;
     tileCanvasBottomVisible = false;
     spriteCanvasVisible = true;
+    bitmapMode = false;
     dumpRAMIcon = faDownload;
 
     constructor(
@@ -106,6 +107,7 @@ export class GraphicsComponent implements OnInit, AfterViewInit, OnChanges {
     updateView() {
         if (this.visible && this.ti994A) {
             const vdp = this.ti994A.getVDP();
+            this.bitmapMode = vdp.isBitmapMode();
             vdp.drawPaletteImage(this.paletteCanvas);
             if (this.tileCanvasTopVisible) {
                 vdp.drawTilePatternImage(this.tileCanvasTop, 0, true);

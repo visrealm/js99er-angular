@@ -541,6 +541,10 @@ export class TMS9918A implements VDP {
         canvasContext.putImageData(imageData, 0, 0);
     }
 
+    isBitmapMode(): boolean {
+        return this.screenMode === ScreenMode.MODE_BITMAP;
+    }
+
     drawSpritePatternImage(canvas: HTMLCanvasElement, gap: boolean) {
         const
             baseWidth = 256,

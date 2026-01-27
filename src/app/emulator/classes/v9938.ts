@@ -940,6 +940,10 @@ export class V9938 implements VDP {
         canvasContext.putImageData(imageData, 0, 0);
     }
 
+    isBitmapMode(): boolean {
+        return this.mode === V9938.MODE_GRAPHIC2 || this.mode === V9938.MODE_GRAPHIC3;
+    }
+
     drawSpritePatternImage(canvas: HTMLCanvasElement, gap: boolean): void {
         const
             baseWidth = 256,

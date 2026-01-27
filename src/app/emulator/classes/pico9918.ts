@@ -37,6 +37,14 @@ export class PICO9918 extends F18A {
         return this.screenMode !== F18A.MODE_TEXT_80;
     }
 
+    override writeRegister(reg: number, value: number) {
+        const oldDoubledV = this.isDoubledV();
+        super.writeRegister(reg, value);
+        if (reg === 0 && this.isDoubledV() !== oldDoubledV) {
+            this.setDimensions(false);
+        }
+    }
+
     protected override isDoubledV(): boolean {
         return (this.registers[0] & 0x08) === 0;
     }

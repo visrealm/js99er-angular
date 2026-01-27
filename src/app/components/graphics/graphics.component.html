@@ -6,13 +6,13 @@
                     <mat-panel-title>
                         Tile patterns
                     </mat-panel-title>
-                    <mat-panel-description>
+                    <mat-panel-description *ngIf="bitmapMode">
                         Top third
                     </mat-panel-description>
                 </mat-expansion-panel-header>
                 <canvas id="tile-canvas-top"></canvas>
             </mat-expansion-panel>
-            <mat-expansion-panel (opened)="setTileCanvasMiddleVisible(true)" (closed)="setTileCanvasMiddleVisible(false)">
+            <mat-expansion-panel *ngIf="bitmapMode" (opened)="setTileCanvasMiddleVisible(true)" (closed)="setTileCanvasMiddleVisible(false)">
                 <mat-expansion-panel-header>
                     <mat-panel-title>
                         Tile patterns
@@ -23,7 +23,7 @@
                 </mat-expansion-panel-header>
                 <canvas id="tile-canvas-middle"></canvas>
             </mat-expansion-panel>
-            <mat-expansion-panel (opened)="setTileCanvasBottomVisible(true)" (closed)="setTileCanvasBottomVisible(false)">
+            <mat-expansion-panel *ngIf="bitmapMode" (opened)="setTileCanvasBottomVisible(true)" (closed)="setTileCanvasBottomVisible(false)">
                 <mat-expansion-panel-header>
                     <mat-panel-title>
                         Tile patterns
