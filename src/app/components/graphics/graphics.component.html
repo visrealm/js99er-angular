@@ -34,6 +34,17 @@
                 </mat-expansion-panel-header>
                 <canvas id="tile-canvas-bottom"></canvas>
             </mat-expansion-panel>
+            <mat-expansion-panel *ngIf="multiplePages" (opened)="setNameTableCanvasVisible(true)" (closed)="setNameTableCanvasVisible(false)">
+                <mat-expansion-panel-header>
+                    <mat-panel-title>
+                        Name tables
+                    </mat-panel-title>
+                    <mat-panel-description>
+                        All pages
+                    </mat-panel-description>
+                </mat-expansion-panel-header>
+                <canvas id="name-table-canvas"></canvas>
+            </mat-expansion-panel>
         </mat-accordion>
 
         <mat-expansion-panel (opened)="setSpriteCanvasVisible(true)" (closed)="setSpriteCanvasVisible(false)" [expanded]="true">

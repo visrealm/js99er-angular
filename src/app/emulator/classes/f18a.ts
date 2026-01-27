@@ -1326,6 +1326,144 @@ export class F18A implements VDP {
         return this.screenMode === F18A.MODE_BITMAP;
     }
 
+    hasMultiplePages(): boolean {
+        return (this.registers[29] & 0x03) !== 0;
+    }
+
+    drawNameTableImage(canvas: HTMLCanvasElement): void {
+        const reg29 = this.registers[29];
+        const hPages = (reg29 & 0x02) !== 0;
+        const vPages = (reg29 & 0x01) !== 0;
+        const cols = hPages ? 64 : 32;
+        const rows = vPages ? 48 : 24;
+        const baseWidth = cols * 8;
+        const baseHeight = rows * 8;
+        const width = canvas.width = baseWidth;
+        const height = canvas.height = baseHeight;
+        const canvasContext = canvas.getContext('2d');
+        if (!canvasContext) {
+            return;
+        }
+        const imageData = canvasContext.createImageData(width, height);
+        const imageDataData = imageData.data;
+        const ram = this.ram;
+        const nameTable = this.nameTable;
+        const colorTable = this.colorTable;
+        const charPatternTable = this.charPatternTable;
+        const colorTableMask = this.colorTableMask;
+        const patternTableMask = this.patternTableMask;
+        const screenMode = this.screenMode;
+        const tileColorMode = this.tileColorMode;
+        const tilePaletteSelect = this.tilePaletteSelect1;
+        const palette = this.palette;
+        const fgColor = this.fgColor;
+        const bgColor = this.bgColor;
+        const ecmPositionAttributes = this.ecmPositionAttributes;
+        const unlocked = this.unlocked;
+        // Canonical base masks out page bits for position-based attribute indexing
+        const nameTableCanonicalBase = vPages ? nameTable & 0x3000 : (hPages ? nameTable & 0x3800 : nameTable);
+        let imageDataAddr = 0;
+        for (let row = 0; row < rows; row++) {
+            // Determine which page this row belongs to
+            const pageRow = row >= 24;
+            const vOffset = pageRow ? 0x800 : 0;
+            const localRow = pageRow ? row - 24 : row;
+            for (let line = 0; line < 8; line++) {
+                for (let col = 0; col < cols; col++) {
+                    // Determine which page this column belongs to
+                    const pageCol = col >= 32;
+                    const hOffset = pageCol ? 0x400 : 0;
+                    const localCol = pageCol ? col - 32 : col;
+                    const nameAddr = (nameTable | vOffset | hOffset) + localRow * 32 + localCol;
+                    const name = ram[nameAddr & 0x3fff];
+                    // Position index relative to canonical base for position-based attributes
+                    const positionIndex = (nameAddr & 0x3fff) - nameTableCanonicalBase;
+                    let color = 0;
+                    for (let pixel = 0; pixel < 8; pixel++) {
+                        const bit = 0x80 >> pixel;
+                        switch (screenMode) {
+                            case F18A.MODE_GRAPHICS: {
+                                let lineOffset = line;
+                                let pixelOffset = pixel;
+                                let tileAttributeByte = 0;
+                                if (tileColorMode !== F18A.COLOR_MODE_NORMAL) {
+                                    tileAttributeByte = ram[colorTable + (ecmPositionAttributes ? positionIndex : name)];
+                                    if ((tileAttributeByte & 0x40) !== 0) {
+                                        pixelOffset = 7 - pixelOffset;
+                                    }
+                                    if ((tileAttributeByte & 0x20) !== 0) {
+                                        lineOffset = 7 - lineOffset;
+                                    }
+                                }
+                                const patternAddr = charPatternTable + (name << 3) + lineOffset;
+                                const patternByte = ram[patternAddr];
+                                const bitValue = 0x80 >> pixelOffset;
+                                switch (tileColorMode) {
+                                    case F18A.COLOR_MODE_NORMAL: {
+                                        const colorSet = ram[colorTable + (name >> 3)];
+                                        color = (patternByte & bitValue) !== 0 ? (colorSet & 0xF0) >> 4 : (colorSet & 0x0F || bgColor) +
+                                            tilePaletteSelect;
+                                        break;
+                                    }
+                                    case F18A.COLOR_MODE_ECM_1:
+                                        color = ((patternByte & bitValue) >> (7 - pixelOffset)) +
+                                            (tilePaletteSelect & 0x20) | ((tileAttributeByte & 0x0f) << 1);
+                                        break;
+                                    case F18A.COLOR_MODE_ECM_2:
+                                        color =
+                                            (((patternByte & bitValue) >> (7 - pixelOffset)) |
+                                            (((ram[(patternAddr + this.tilePlaneOffset) & 0x3fff] & bitValue) >> (7 - pixelOffset)) << 1)) +
+                                            ((tileAttributeByte & 0x0f) << 2);
+                                        break;
+                                    case F18A.COLOR_MODE_ECM_3:
+                                        color =
+                                            (((patternByte & bitValue) >> (7 - pixelOffset)) |
+                                            (((ram[(patternAddr + this.tilePlaneOffset) & 0x3fff] & bitValue) >> (7 - pixelOffset)) << 1) |
+                                            (((ram[(patternAddr + (this.tilePlaneOffset << 1)) & 0x3fff] & bitValue) >> (7 - pixelOffset)) << 2)) +
+                                            ((tileAttributeByte & 0x0e) << 2);
+                                        break;
+                                }
+                                break;
+                            }
+                            case F18A.MODE_BITMAP: {
+                                const sectionOffset = (localRow >= 16 ? 2 : localRow >= 8 ? 1 : 0) << 11;
+                                const nameInSection = (localRow % 8) * 32 + localCol;
+                                const tableOffset = sectionOffset + (nameInSection << 3);
+                                const colorByte = ram[colorTable + (tableOffset & colorTableMask) + line];
+                                const patternByte = ram[charPatternTable + (tableOffset & patternTableMask) + line];
+                                color = (patternByte & bit) !== 0 ? (colorByte & 0xF0) >> 4 : colorByte & 0x0F;
+                                break;
+                            }
+                            case F18A.MODE_TEXT: {
+                                const patternByte = ram[charPatternTable + (name << 3) + line];
+                                if (pixel < 6) {
+                                    if (unlocked && ecmPositionAttributes) {
+                                        const tileAttributeByte = ram[colorTable + positionIndex];
+                                        color = (patternByte & (0x80 >> pixel)) !== 0 ? (tileAttributeByte & 0xF0) >> 4 : tileAttributeByte & 0x0F;
+                                    } else {
+                                        color = (patternByte & (0x80 >> pixel)) !== 0 ? fgColor : bgColor;
+                                    }
+                                } else {
+                                    color = bgColor;
+                                }
+                                break;
+                            }
+                            default:
+                                color = bgColor;
+                                break;
+                        }
+                        const rgbColor = palette[color];
+                        imageDataData[imageDataAddr++] = rgbColor[0];
+                        imageDataData[imageDataAddr++] = rgbColor[1];
+                        imageDataData[imageDataAddr++] = rgbColor[2];
+                        imageDataData[imageDataAddr++] = 255;
+                    }
+                }
+            }
+        }
+        canvasContext.putImageData(imageData, 0, 0);
+    }
+
     drawSpritePatternImage(canvas: HTMLCanvasElement, gap: boolean) {
         const
             baseWidth = 256,

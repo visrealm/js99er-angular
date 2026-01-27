@@ -944,6 +944,13 @@ export class V9938 implements VDP {
         return this.mode === V9938.MODE_GRAPHIC2 || this.mode === V9938.MODE_GRAPHIC3;
     }
 
+    hasMultiplePages(): boolean {
+        return false;
+    }
+
+    drawNameTableImage(_canvas: HTMLCanvasElement): void {
+    }
+
     drawSpritePatternImage(canvas: HTMLCanvasElement, gap: boolean): void {
         const
             baseWidth = 256,

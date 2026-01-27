@@ -24,12 +24,15 @@ export class GraphicsComponent implements OnInit, AfterViewInit, OnChanges {
     private tileCanvasMiddle: HTMLCanvasElement;
     private tileCanvasBottom: HTMLCanvasElement;
     private spriteCanvas: HTMLCanvasElement;
+    private nameTableCanvas: HTMLCanvasElement;
 
     tileCanvasTopVisible = true;
     tileCanvasMiddleVisible = false;
     tileCanvasBottomVisible = false;
     spriteCanvasVisible = true;
+    nameTableCanvasVisible = false;
     bitmapMode = false;
+    multiplePages = false;
     dumpRAMIcon = faDownload;
 
     constructor(
@@ -60,7 +63,7 @@ export class GraphicsComponent implements OnInit, AfterViewInit, OnChanges {
         this.tileCanvasMiddle = this.element.nativeElement.querySelector('#tile-canvas-middle');
         this.tileCanvasBottom = this.element.nativeElement.querySelector('#tile-canvas-bottom');
         this.spriteCanvas = this.element.nativeElement.querySelector('#sprite-canvas');
-
+        this.nameTableCanvas = this.element.nativeElement.querySelector('#name-table-canvas');
     }
 
     ngOnChanges(changes: SimpleChanges): void {
@@ -104,10 +107,16 @@ export class GraphicsComponent implements OnInit, AfterViewInit, OnChanges {
         this.updateView();
     }
 
+    setNameTableCanvasVisible(visible: boolean) {
+        this.nameTableCanvasVisible = visible;
+        this.updateView();
+    }
+
     updateView() {
         if (this.visible && this.ti994A) {
             const vdp = this.ti994A.getVDP();
             this.bitmapMode = vdp.isBitmapMode();
+            this.multiplePages = vdp.hasMultiplePages();
             vdp.drawPaletteImage(this.paletteCanvas);
             if (this.tileCanvasTopVisible) {
                 vdp.drawTilePatternImage(this.tileCanvasTop, 0, true);
@@ -120,6 +129,14 @@ export class GraphicsComponent implements OnInit, AfterViewInit, OnChanges {
             }
             if (this.spriteCanvasVisible) {
                 vdp.drawSpritePatternImage(this.spriteCanvas, true);
+            }
+            if (this.nameTableCanvasVisible && this.multiplePages) {
+                if (!this.nameTableCanvas) {
+                    this.nameTableCanvas = this.element.nativeElement.querySelector('#name-table-canvas');
+                }
+                if (this.nameTableCanvas) {
+                    vdp.drawNameTableImage(this.nameTableCanvas);
+                }
             }
         }
     }
