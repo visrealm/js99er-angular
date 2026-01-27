@@ -131,9 +131,7 @@ export class GraphicsComponent implements OnInit, AfterViewInit, OnChanges {
                 vdp.drawSpritePatternImage(this.spriteCanvas, true);
             }
             if (this.nameTableCanvasVisible && this.multiplePages) {
-                if (!this.nameTableCanvas) {
-                    this.nameTableCanvas = this.element.nativeElement.querySelector('#name-table-canvas');
-                }
+                this.nameTableCanvas = this.element.nativeElement.querySelector('#name-table-canvas');
                 if (this.nameTableCanvas) {
                     vdp.drawNameTableImage(this.nameTableCanvas);
                 }
