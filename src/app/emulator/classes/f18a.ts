@@ -103,7 +103,7 @@ export class F18A implements VDP {
     ];
 
     private canvas: HTMLCanvasElement;
-    private canvasContext: CanvasRenderingContext2D;
+    protected canvasContext: CanvasRenderingContext2D;
     private console: TI994A;
     private psg: PSG;
     private cru: CRU;
@@ -190,19 +190,19 @@ export class F18A implements VDP {
     private counterStart: number;
     private counterSnap: number;
 
-    private canvasWidth: number;
-    private canvasHeight: number;
+    protected canvasWidth: number;
+    protected canvasHeight: number;
     private drawWidth: number;
     private drawHeight: number;
     private leftBorder: number;
     private topBorder: number;
-    private imageData: ImageData;
-    private frameCounter: number;
+    protected imageData: ImageData;
+    protected frameCounter: number;
     private lastTime: number;
 
-    private splashImage: HTMLImageElement;
+    protected splashImage: HTMLImageElement;
 
-    private gpu: F18AGPU;
+    protected gpu: F18AGPU;
 
     private spritePatternColorMap: {};
 
@@ -222,7 +222,7 @@ export class F18A implements VDP {
         imageObj.onload = () => {
             this.splashImage = imageObj;
         };
-        imageObj.src = 'assets/images/f18a_bitmap_v' + this.getVersionNoString() + '.png';
+        imageObj.src = this.getSplashImagePath();
         this.log.info("F18A emulation enabled");
     }
 
@@ -338,7 +338,7 @@ export class F18A implements VDP {
         this.lastTime = 0;
 
         if (!this.gpu) {
-            this.gpu = new F18AGPU(this);
+            this.gpu = this.createGPU();
         }
         this.gpu.reset();
 
@@ -402,9 +402,17 @@ export class F18A implements VDP {
         this.log.setMinLevel(LogLevel.INFO);
     }
 
+    protected getCanvasSize(): { width: number, height: number } {
+        return {
+            width: this.screenMode === F18A.MODE_TEXT_80 ? 640 : 320,
+            height: this.screenMode === F18A.MODE_TEXT_80 ? 480 : 240
+        };
+    }
+
     setDimensions(force: boolean) {
-        const newCanvasWidth = this.screenMode === F18A.MODE_TEXT_80 ? 640 : 320;
-        const newCanvasHeight = this.screenMode === F18A.MODE_TEXT_80 ? 480 : 240;
+        const size = this.getCanvasSize();
+        const newCanvasWidth = size.width;
+        const newCanvasHeight = size.height;
         const newDimensions = force || newCanvasWidth !== this.canvas.width || newCanvasHeight !== this.canvas.height;
         if (newDimensions) {
             this.canvasWidth = this.canvas.width = newCanvasWidth;
@@ -413,7 +421,7 @@ export class F18A implements VDP {
         this.drawWidth = this.screenMode === F18A.MODE_TEXT_80 ? 512 : 256;
         this.drawHeight = this.row30Enabled ? 240 : 192;
         this.leftBorder = Math.floor((this.canvasWidth - this.drawWidth) >> 1);
-        this.topBorder = Math.floor(((this.canvasHeight >> (this.screenMode === F18A.MODE_TEXT_80 ? 1 : 0)) - this.drawHeight) >> 1);
+        this.topBorder = Math.floor(((this.canvasHeight >> (this.shouldDoublePixels() ? 1 : 0)) - this.drawHeight) >> 1);
         if (newDimensions) {
             this.fillCanvas(this.bgColor);
             this.imageData = new ImageData(new Uint8ClampedArray(this.wasmService.getMemoryBuffer(), imageDataAddr, (this.canvasWidth * this.canvasHeight) << 2), this.canvasWidth, this.canvasHeight);
@@ -490,7 +498,8 @@ export class F18A implements VDP {
             this.patternTableMask,
             this.colorTableMask,
             this.fgColor,
-            this.statusRegister
+            this.statusRegister,
+            this.shouldDoublePixels()
         );
 
         this.blanking = 1; // GPU code after scanline may depend on this
@@ -523,6 +532,10 @@ export class F18A implements VDP {
 
     updateCanvas() {
         this.canvasContext.putImageData(this.imageData, 0, 0);
+        this.drawSplash();
+    }
+
+    protected drawSplash() {
         if (this.splashImage && this.frameCounter < 300) {
             this.canvasContext.drawImage(this.splashImage, 0, 0);
         }
@@ -975,7 +988,7 @@ export class F18A implements VDP {
                 return i;
             case 1:
                 // ID
-                return 0xe0;
+                return this.getStatusRegister1Id();
             case 2:
                 // GPU status
                 return (this.gpu.isIdle() ? 0 : 0x80) | (this.ram[0xb000] & 0x7f);
@@ -1137,6 +1150,22 @@ export class F18A implements VDP {
 
     getVersion() {
         return F18A.VERSION;
+    }
+
+    protected getSplashImagePath(): string {
+        return 'assets/images/f18a_bitmap_v' + this.getVersionNoString() + '.png';
+    }
+
+    protected getStatusRegister1Id(): number {
+        return 0xe0;
+    }
+
+    protected shouldDoublePixels(): boolean {
+        return this.screenMode === F18A.MODE_TEXT_80;
+    }
+
+    protected createGPU(): F18AGPU {
+        return new F18AGPU(this);
     }
 
     getVersionNoString() {
