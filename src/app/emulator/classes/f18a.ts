@@ -1459,6 +1459,50 @@ export class F18A implements VDP {
             }
         }
         canvasContext.putImageData(imageData, 0, 0);
+        // Draw viewport rectangle showing the active display area
+        const viewportWidth = this.screenMode === F18A.MODE_TEXT_80 ? 512 : 256;
+        const viewportHeight = this.row30Enabled ? 240 : 192;
+        // Determine primary page offset from unmasked name table address
+        const pageFlags = this.nameTable & 0xc00;
+        const hPageOffset = (pageFlags & 0x400) ? 256 : 0;
+        const vPageOffset = (pageFlags & 0x800) ? 192 : 0;
+        // Scroll registers give pixel offset within the primary page
+        const viewX = hPageOffset + this.hScroll1;
+        const viewY = vPageOffset + this.vScroll1;
+        canvasContext.strokeStyle = 'rgba(255, 255, 0, 0.8)';
+        canvasContext.lineWidth = 2;
+        // Draw the viewport rectangle, handling wrapping across page boundaries
+        const totalWidth = width;
+        const totalHeight = height;
+        const parts: [number, number, number, number][] = [];
+        const x2 = viewX + viewportWidth;
+        const y2 = viewY + viewportHeight;
+        const wrapsH = x2 > totalWidth;
+        const wrapsV = y2 > totalHeight;
+        if (!wrapsH && !wrapsV) {
+            parts.push([viewX, viewY, viewportWidth, viewportHeight]);
+        } else if (wrapsH && !wrapsV) {
+            parts.push([viewX, viewY, totalWidth - viewX, viewportHeight]);
+            parts.push([0, viewY, x2 - totalWidth, viewportHeight]);
+        } else if (!wrapsH && wrapsV) {
+            parts.push([viewX, viewY, viewportWidth, totalHeight - viewY]);
+            parts.push([viewX, 0, viewportWidth, y2 - totalHeight]);
+        } else {
+            parts.push([viewX, viewY, totalWidth - viewX, totalHeight - viewY]);
+            parts.push([0, viewY, x2 - totalWidth, totalHeight - viewY]);
+            parts.push([viewX, 0, totalWidth - viewX, y2 - totalHeight]);
+            parts.push([0, 0, x2 - totalWidth, y2 - totalHeight]);
+        }
+        // Tint the non-viewport area, then restore viewport pixels
+        canvasContext.fillStyle = 'rgba(0, 0, 0, 0.4)';
+        canvasContext.fillRect(0, 0, totalWidth, totalHeight);
+        for (const [rx, ry, rw, rh] of parts) {
+            canvasContext.putImageData(imageData, 0, 0, rx, ry, rw, rh);
+        }
+        // Draw viewport border
+        for (const [rx, ry, rw, rh] of parts) {
+            canvasContext.strokeRect(rx + 0.5, ry + 0.5, rw - 1, rh - 1);
+        }
     }
 
     drawSpritePatternImage(canvas: HTMLCanvasElement, gap: boolean) {
