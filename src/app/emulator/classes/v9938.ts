@@ -948,6 +948,10 @@ export class V9938 implements VDP {
         return false;
     }
 
+    hasTileLayer2(): boolean {
+        return false;
+    }
+
     drawNameTableImage(_canvas: HTMLCanvasElement): void {
     }
 

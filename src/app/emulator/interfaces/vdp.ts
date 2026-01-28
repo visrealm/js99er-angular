@@ -27,7 +27,8 @@ export interface VDP extends Stateful, MemoryDevice {
     drawPaletteImage(canvas: HTMLCanvasElement): void;
     drawTilePatternImage(canvas: HTMLCanvasElement, section: number, gap: boolean): void;
     drawSpritePatternImage(canvas: HTMLCanvasElement, gap: boolean): void;
-    drawNameTableImage(canvas: HTMLCanvasElement): void;
+    drawNameTableImage(canvas: HTMLCanvasElement, layer: number): void;
     hasMultiplePages(): boolean;
+    hasTileLayer2(): boolean;
     isBitmapMode(): boolean;
 }

@@ -549,6 +549,10 @@ export class TMS9918A implements VDP {
         return false;
     }
 
+    hasTileLayer2(): boolean {
+        return false;
+    }
+
     drawNameTableImage(_canvas: HTMLCanvasElement): void {
     }
 

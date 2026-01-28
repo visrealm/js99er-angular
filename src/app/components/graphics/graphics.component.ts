@@ -24,15 +24,18 @@ export class GraphicsComponent implements OnInit, AfterViewInit, OnChanges {
     private tileCanvasMiddle: HTMLCanvasElement;
     private tileCanvasBottom: HTMLCanvasElement;
     private spriteCanvas: HTMLCanvasElement;
-    private nameTableCanvas: HTMLCanvasElement;
+    private nameTable1Canvas: HTMLCanvasElement;
+    private nameTable2Canvas: HTMLCanvasElement;
 
     tileCanvasTopVisible = true;
     tileCanvasMiddleVisible = false;
     tileCanvasBottomVisible = false;
     spriteCanvasVisible = true;
-    nameTableCanvasVisible = false;
+    nameTable1CanvasVisible = false;
+    nameTable2CanvasVisible = false;
     bitmapMode = false;
     multiplePages = false;
+    hasT2Layer = false;
     dumpRAMIcon = faDownload;
 
     constructor(
@@ -63,7 +66,8 @@ export class GraphicsComponent implements OnInit, AfterViewInit, OnChanges {
         this.tileCanvasMiddle = this.element.nativeElement.querySelector('#tile-canvas-middle');
         this.tileCanvasBottom = this.element.nativeElement.querySelector('#tile-canvas-bottom');
         this.spriteCanvas = this.element.nativeElement.querySelector('#sprite-canvas');
-        this.nameTableCanvas = this.element.nativeElement.querySelector('#name-table-canvas');
+        this.nameTable1Canvas = this.element.nativeElement.querySelector('#name-table1-canvas');
+        this.nameTable2Canvas = this.element.nativeElement.querySelector('#name-table2-canvas');
     }
 
     ngOnChanges(changes: SimpleChanges): void {
@@ -107,8 +111,12 @@ export class GraphicsComponent implements OnInit, AfterViewInit, OnChanges {
         this.updateView();
     }
 
-    setNameTableCanvasVisible(visible: boolean) {
-        this.nameTableCanvasVisible = visible;
+    setNameTable1CanvasVisible(visible: boolean) {
+        this.nameTable1CanvasVisible = visible;
+        this.updateView();
+    }
+    setNameTable2CanvasVisible(visible: boolean) {
+        this.nameTable2CanvasVisible = visible;
         this.updateView();
     }
 
@@ -117,6 +125,7 @@ export class GraphicsComponent implements OnInit, AfterViewInit, OnChanges {
             const vdp = this.ti994A.getVDP();
             this.bitmapMode = vdp.isBitmapMode();
             this.multiplePages = vdp.hasMultiplePages();
+            this.hasT2Layer = vdp.hasTileLayer2();
             vdp.drawPaletteImage(this.paletteCanvas);
             if (this.tileCanvasTopVisible) {
                 vdp.drawTilePatternImage(this.tileCanvasTop, 0, true);
@@ -130,10 +139,16 @@ export class GraphicsComponent implements OnInit, AfterViewInit, OnChanges {
             if (this.spriteCanvasVisible) {
                 vdp.drawSpritePatternImage(this.spriteCanvas, true);
             }
-            if (this.nameTableCanvasVisible && this.multiplePages) {
-                this.nameTableCanvas = this.element.nativeElement.querySelector('#name-table-canvas');
-                if (this.nameTableCanvas) {
-                    vdp.drawNameTableImage(this.nameTableCanvas);
+            if (this.nameTable1CanvasVisible) {
+                this.nameTable1Canvas = this.element.nativeElement.querySelector('#name-table1-canvas');
+                if (this.nameTable1Canvas) {
+                    vdp.drawNameTableImage(this.nameTable1Canvas, 1);
+                }
+            }
+            if (this.nameTable2CanvasVisible) {
+                this.nameTable2Canvas = this.element.nativeElement.querySelector('#name-table2-canvas');
+                if (this.nameTable2Canvas) {
+                    vdp.drawNameTableImage(this.nameTable2Canvas, 2);
                 }
             }
         }

@@ -1327,15 +1327,22 @@ export class F18A implements VDP {
     }
 
     hasMultiplePages(): boolean {
-        return (this.registers[29] & 0x03) !== 0;
+        return (this.registers[29] & 0x33) !== 0;
     }
 
-    drawNameTableImage(canvas: HTMLCanvasElement): void {
+    hasTileLayer2(): boolean {
+        return this.tileLayer2Enabled;
+    }
+
+    drawNameTableImage(canvas: HTMLCanvasElement, layer: number): void {
         const reg29 = this.registers[29];
-        const hPages = (reg29 & 0x02) !== 0;
-        const vPages = (reg29 & 0x01) !== 0;
+        const isLayer2 = layer === 2;
+        const hPages = isLayer2 ? (reg29 & 0x20) !== 0 : (reg29 & 0x02) !== 0;
+        const vPages = isLayer2 ? (reg29 & 0x10) !== 0 : (reg29 & 0x01) !== 0;
+        const baseRows = this.row30Enabled ? 30 : 24;
         const cols = hPages ? 64 : 32;
-        const rows = vPages ? 48 : 24;
+
+        const rows = baseRows * (vPages ? 2 : 1);
         const baseWidth = cols * 8;
         const baseHeight = rows * 8;
         const width = canvas.width = baseWidth;
@@ -1347,14 +1354,15 @@ export class F18A implements VDP {
         const imageData = canvasContext.createImageData(width, height);
         const imageDataData = imageData.data;
         const ram = this.ram;
-        const nameTable = this.nameTable & ~0xc00;
-        const colorTable = this.colorTable;// & ~0xc00;
+        const mask = (hPages ? 0x400 : 0x000) | (vPages ? 0x800 : 0x000);
+        const nameTable = (isLayer2 ? this.nameTable2 : this.nameTable) & ~mask;
+        const colorTable = isLayer2 ? this.colorTable2 : this.colorTable;
         const charPatternTable = this.charPatternTable;
         const colorTableMask = this.colorTableMask;
         const patternTableMask = this.patternTableMask;
         const screenMode = this.screenMode;
         const tileColorMode = this.tileColorMode;
-        const tilePaletteSelect = this.tilePaletteSelect1;
+        const tilePaletteSelect = isLayer2 ? this.tilePaletteSelect2 : this.tilePaletteSelect1;
         const palette = this.palette;
         const fgColor = this.fgColor;
         const bgColor = this.bgColor;
@@ -1362,9 +1370,9 @@ export class F18A implements VDP {
         const unlocked = this.unlocked;
         let imageDataAddr = 0;
         for (let row = 0; row < rows; row++) {
-            const pageRow = row >= 24;
+            const pageRow = row >= baseRows;
             const vOffset = pageRow ? 0x800 : 0;
-            const localRow = pageRow ? row - 24 : row;
+            const localRow = pageRow ? row - baseRows : row;
             for (let line = 0; line < 8; line++) {
                 for (let col = 0; col < cols; col++) {
                     const pageCol = col >= 32;
@@ -1463,12 +1471,15 @@ export class F18A implements VDP {
         const viewportWidth = this.screenMode === F18A.MODE_TEXT_80 ? 512 : 256;
         const viewportHeight = this.row30Enabled ? 240 : 192;
         // Determine primary page offset from unmasked name table address
-        const pageFlags = this.nameTable & 0xc00;
+        const unmaskedNameTable = isLayer2 ? (this.registers[10] & 0x0f) << 10 : this.nameTable;
+        const pageFlags = unmaskedNameTable & mask;
         const hPageOffset = (pageFlags & 0x400) ? 256 : 0;
         const vPageOffset = (pageFlags & 0x800) ? 192 : 0;
         // Scroll registers give pixel offset within the primary page
-        const viewX = hPageOffset + this.hScroll1;
-        const viewY = vPageOffset + this.vScroll1;
+        const hScroll = isLayer2 ? this.hScroll2 : this.hScroll1;
+        const vScroll = isLayer2 ? this.vScroll2 : this.vScroll1;
+        const viewX = hPageOffset + hScroll;
+        const viewY = vPageOffset + vScroll;
         canvasContext.strokeStyle = 'rgba(255, 255, 0, 0.8)';
         canvasContext.lineWidth = 2;
         // Draw the viewport rectangle, handling wrapping across page boundaries
