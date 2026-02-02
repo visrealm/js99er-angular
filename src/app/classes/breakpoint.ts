@@ -1,5 +1,6 @@
 export enum BreakpointType {
     INSTRUCTION,
+    GPU_INSTRUCTION,
     CPU_MEMORY_READ,
     CPU_MEMORY_WRITE,
     VDP_MEMORY_READ,
@@ -10,12 +11,10 @@ export class Breakpoint {
 
     private _type: BreakpointType;
     private _addr: number;
-    private _mask: number;
 
-    constructor(type: BreakpointType, addr: number, mask: number) {
+    constructor(type: BreakpointType, addr: number) {
         this._type = type;
         this._addr = addr;
-        this._mask = mask;
     }
 
     get type(): BreakpointType {
@@ -32,13 +31,5 @@ export class Breakpoint {
 
     set addr(value: number) {
         this._addr = value;
-    }
-
-    get mask(): number {
-        return this._mask;
-    }
-
-    set mask(value: number) {
-        this._mask = value;
     }
 }
