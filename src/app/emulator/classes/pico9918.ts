@@ -40,8 +40,18 @@ export class PICO9918 extends F18A {
     override writeRegister(reg: number, value: number) {
         const oldDoubledV = this.isDoubledV();
         super.writeRegister(reg, value);
-        if (reg === 0 && this.isDoubledV() !== oldDoubledV) {
-            this.setDimensions(false);
+        switch (reg)
+        {
+          case 0:
+            if (this.isDoubledV() !== oldDoubledV) {
+                this.setDimensions(false);
+            }
+            break;
+
+          case 50:
+            if ((value & 0xc0) === 0xc0) {  // PICO9918 resets palette if 0x40 bit set
+              this.resetPalette();
+            }
         }
     }
 

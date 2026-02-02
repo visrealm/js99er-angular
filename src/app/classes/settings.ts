@@ -57,12 +57,12 @@ export class Settings {
         this.psg = 'STANDARD';
         this.enableSpeech = true;
         this.ram = '32K';
-        this.vdp = 'TMS9918A';
+        this.vdp = 'PICO9918';
         this.enablePCKeyboard = false;
         this.enableMapArrowKeys = false;
         this.enableGoogleDrive = false;
         this.enableGRAM = false;
-        this.enablePixelated = false;
+        this.enablePixelated = true;
         this.enablePauseOnFocusLost = false;
         this.tipi = 'NONE';
         this.tipiWebsocketURI = "ws://localhost:9901/tipi";

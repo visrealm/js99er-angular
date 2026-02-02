@@ -249,15 +249,7 @@ export class F18A implements VDP {
         this.statusRegister = 0;
 
         this.palette = [];
-        for (let i = 0; i < 64; i++) {
-            const rgbColor = F18A.PALETTE[i];
-            this.palette[i] = [
-                parseInt(rgbColor.charAt(0), 16) * 17,
-                parseInt(rgbColor.charAt(1), 16) * 17,
-                parseInt(rgbColor.charAt(2), 16) * 17
-            ];
-            this.writePaletteEntryToWasm(i);
-        }
+        this.resetPalette();
 
         this.prefetchByte = 0;
         this.latch = false;
@@ -343,6 +335,18 @@ export class F18A implements VDP {
         this.gpu.reset();
 
         this.spritePatternColorMap = {};
+    }
+
+    resetPalette() {
+        for (let i = 0; i < 64; i++) {
+            const rgbColor = F18A.PALETTE[i];
+            this.palette[i] = [
+                parseInt(rgbColor.charAt(0), 16) * 17,
+                parseInt(rgbColor.charAt(1), 16) * 17,
+                parseInt(rgbColor.charAt(2), 16) * 17
+            ];
+            this.writePaletteEntryToWasm(i);
+        }
     }
 
     setPaletteEntry(index: number, r: number, g: number, b: number) {
