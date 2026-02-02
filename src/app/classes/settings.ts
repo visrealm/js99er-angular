@@ -23,7 +23,7 @@ export type PSGType = 'STANDARD' | 'FORTI';
 
 export type RAMType = 'NONE' | '32K' | 'SAMS1M' | 'SAMS4M' | 'SAMS16M';
 
-export type VDPType = 'TMS9918A' | 'F18A' | 'V9938';
+export type VDPType = 'TMS9918A' | 'F18A' | 'PICO9918' | 'V9938';
 
 export type TIPIType = 'NONE' | 'MOUSE' | 'FULL';
 
@@ -57,12 +57,12 @@ export class Settings {
         this.psg = 'STANDARD';
         this.enableSpeech = true;
         this.ram = '32K';
-        this.vdp = 'TMS9918A';
+        this.vdp = 'PICO9918';
         this.enablePCKeyboard = false;
         this.enableMapArrowKeys = false;
         this.enableGoogleDrive = false;
         this.enableGRAM = false;
-        this.enablePixelated = false;
+        this.enablePixelated = true;
         this.enablePauseOnFocusLost = false;
         this.tipi = 'NONE';
         this.tipiWebsocketURI = "ws://localhost:9901/tipi";

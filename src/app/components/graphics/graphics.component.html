@@ -1,18 +1,18 @@
 <div class="graphics">
     <div class="panels">
-        <mat-accordion>
+        <mat-accordion multi>
             <mat-expansion-panel (opened)="setTileCanvasTopVisible(true)" (closed)="setTileCanvasTopVisible(false)" [expanded]="true">
                 <mat-expansion-panel-header>
                     <mat-panel-title>
                         Tile patterns
                     </mat-panel-title>
-                    <mat-panel-description>
+                    <mat-panel-description *ngIf="bitmapMode">
                         Top third
                     </mat-panel-description>
                 </mat-expansion-panel-header>
                 <canvas id="tile-canvas-top"></canvas>
             </mat-expansion-panel>
-            <mat-expansion-panel (opened)="setTileCanvasMiddleVisible(true)" (closed)="setTileCanvasMiddleVisible(false)">
+            <mat-expansion-panel *ngIf="bitmapMode" (opened)="setTileCanvasMiddleVisible(true)" (closed)="setTileCanvasMiddleVisible(false)">
                 <mat-expansion-panel-header>
                     <mat-panel-title>
                         Tile patterns
@@ -23,7 +23,7 @@
                 </mat-expansion-panel-header>
                 <canvas id="tile-canvas-middle"></canvas>
             </mat-expansion-panel>
-            <mat-expansion-panel (opened)="setTileCanvasBottomVisible(true)" (closed)="setTileCanvasBottomVisible(false)">
+            <mat-expansion-panel *ngIf="bitmapMode" (opened)="setTileCanvasBottomVisible(true)" (closed)="setTileCanvasBottomVisible(false)">
                 <mat-expansion-panel-header>
                     <mat-panel-title>
                         Tile patterns
@@ -33,6 +33,28 @@
                     </mat-panel-description>
                 </mat-expansion-panel-header>
                 <canvas id="tile-canvas-bottom"></canvas>
+            </mat-expansion-panel>
+            <mat-expansion-panel *ngIf="multiplePages" (opened)="setNameTable1CanvasVisible(true)" (closed)="setNameTable1CanvasVisible(false)">
+                <mat-expansion-panel-header>
+                    <mat-panel-title>
+                        Tile layer 1
+                    </mat-panel-title>
+                    <mat-panel-description>
+                        All pages
+                    </mat-panel-description>
+                </mat-expansion-panel-header>
+                <canvas id="name-table1-canvas"></canvas>
+            </mat-expansion-panel>
+            <mat-expansion-panel *ngIf="multiplePages && hasT2Layer" (opened)="setNameTable2CanvasVisible(true)" (closed)="setNameTable2CanvasVisible(false)">
+                <mat-expansion-panel-header>
+                    <mat-panel-title>
+                        Tile layer 2
+                    </mat-panel-title>
+                    <mat-panel-description>
+                        All pages
+                    </mat-panel-description>
+                </mat-expansion-panel-header>
+                <canvas id="name-table2-canvas"></canvas>
             </mat-expansion-panel>
         </mat-accordion>
 

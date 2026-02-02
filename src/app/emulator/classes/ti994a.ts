@@ -8,6 +8,7 @@ import {Memory} from './memory';
 import {TMS9900} from './tms9900';
 import {Log} from '../../classes/log';
 import {F18A} from './f18a';
+import {PICO9918} from './pico9918';
 import {GoogleDrive} from './google-drive';
 import {VDP} from '../interfaces/vdp';
 import {CPU} from '../interfaces/cpu';
@@ -191,6 +192,9 @@ export class TI994A implements Console, Stateful {
                 break;
             case 'F18A':
                 this.vdp = new F18A(this.canvas, this, this.wasmService);
+                break;
+            case 'PICO9918':
+                this.vdp = new PICO9918(this.canvas, this, this.wasmService);
                 break;
             case 'V9938':
                 this.vdp = new V9938(this.canvas, this);

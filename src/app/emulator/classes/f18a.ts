@@ -103,7 +103,7 @@ export class F18A implements VDP {
     ];
 
     private canvas: HTMLCanvasElement;
-    private canvasContext: CanvasRenderingContext2D;
+    protected canvasContext: CanvasRenderingContext2D;
     private console: TI994A;
     private psg: PSG;
     private cru: CRU;
@@ -112,7 +112,7 @@ export class F18A implements VDP {
     // Allocate full 64K, but actually only using 16K VDP RAM + 2K VDP GRAM
     // + 32 bytes for GPU registers
     private ram: Uint8Array;
-    private registers = new Uint8Array(64);
+    protected registers = new Uint8Array(64);
     private addressRegister: number;
     private statusRegister: number;
     private palette: number[][];
@@ -132,7 +132,7 @@ export class F18A implements VDP {
 
     private displayOn: boolean;
     private interruptsOn: boolean;
-    private screenMode: number;
+    protected screenMode: number;
     private colorTable: number;
     private nameTable: number;
     private charPatternTable: number;
@@ -190,25 +190,25 @@ export class F18A implements VDP {
     private counterStart: number;
     private counterSnap: number;
 
-    private canvasWidth: number;
-    private canvasHeight: number;
+    protected canvasWidth: number;
+    protected canvasHeight: number;
     private drawWidth: number;
     private drawHeight: number;
     private leftBorder: number;
     private topBorder: number;
-    private imageData: ImageData;
-    private frameCounter: number;
+    protected imageData: ImageData;
+    protected frameCounter: number;
     private lastTime: number;
 
-    private splashImage: HTMLImageElement;
+    protected splashImage: HTMLImageElement;
 
-    private gpu: F18AGPU;
+    protected gpu: F18AGPU;
 
     private spritePatternColorMap: {};
 
-    private log: Log = Log.getLog();
+    protected log: Log = Log.getLog();
 
-    constructor(canvas: HTMLCanvasElement, console: TI994A, wasmService: WasmService) {
+    constructor(canvas: HTMLCanvasElement, console: TI994A, wasmService: WasmService, logging:boolean = true) {
         this.canvas = canvas;
         this.console = console;
         this.wasmService = wasmService;
@@ -222,8 +222,8 @@ export class F18A implements VDP {
         imageObj.onload = () => {
             this.splashImage = imageObj;
         };
-        imageObj.src = 'assets/images/f18a_bitmap_v' + this.getVersionNoString() + '.png';
-        this.log.info("F18A emulation enabled");
+        imageObj.src = this.getSplashImagePath();
+        if (logging) this.log.info(this.getType() + " emulation enabled");
     }
 
     getGPU() {
@@ -249,15 +249,7 @@ export class F18A implements VDP {
         this.statusRegister = 0;
 
         this.palette = [];
-        for (let i = 0; i < 64; i++) {
-            const rgbColor = F18A.PALETTE[i];
-            this.palette[i] = [
-                parseInt(rgbColor.charAt(0), 16) * 17,
-                parseInt(rgbColor.charAt(1), 16) * 17,
-                parseInt(rgbColor.charAt(2), 16) * 17
-            ];
-            this.writePaletteEntryToWasm(i);
-        }
+        this.resetPalette();
 
         this.prefetchByte = 0;
         this.latch = false;
@@ -338,11 +330,23 @@ export class F18A implements VDP {
         this.lastTime = 0;
 
         if (!this.gpu) {
-            this.gpu = new F18AGPU(this);
+            this.gpu = this.createGPU();
         }
         this.gpu.reset();
 
         this.spritePatternColorMap = {};
+    }
+
+    resetPalette() {
+        for (let i = 0; i < 64; i++) {
+            const rgbColor = F18A.PALETTE[i];
+            this.palette[i] = [
+                parseInt(rgbColor.charAt(0), 16) * 17,
+                parseInt(rgbColor.charAt(1), 16) * 17,
+                parseInt(rgbColor.charAt(2), 16) * 17
+            ];
+            this.writePaletteEntryToWasm(i);
+        }
     }
 
     setPaletteEntry(index: number, r: number, g: number, b: number) {
@@ -369,7 +373,7 @@ export class F18A implements VDP {
     }
 
     resetRegs() {
-        this.log.info("F18A reset");
+        this.log.info(this.getType() + " reset");
         this.log.setMinLevel(LogLevel.NONE);
         this.writeRegister(0, 0);
         this.writeRegister(1, 0x40);
@@ -402,9 +406,17 @@ export class F18A implements VDP {
         this.log.setMinLevel(LogLevel.INFO);
     }
 
+    protected getCanvasSize(): { width: number, height: number } {
+        return {
+            width: this.screenMode === F18A.MODE_TEXT_80 ? 640 : 320,
+            height: this.screenMode === F18A.MODE_TEXT_80 ? 480 : 240
+        };
+    }
+
     setDimensions(force: boolean) {
-        const newCanvasWidth = this.screenMode === F18A.MODE_TEXT_80 ? 640 : 320;
-        const newCanvasHeight = this.screenMode === F18A.MODE_TEXT_80 ? 480 : 240;
+        const size = this.getCanvasSize();
+        const newCanvasWidth = size.width;
+        const newCanvasHeight = size.height;
         const newDimensions = force || newCanvasWidth !== this.canvas.width || newCanvasHeight !== this.canvas.height;
         if (newDimensions) {
             this.canvasWidth = this.canvas.width = newCanvasWidth;
@@ -412,8 +424,8 @@ export class F18A implements VDP {
         }
         this.drawWidth = this.screenMode === F18A.MODE_TEXT_80 ? 512 : 256;
         this.drawHeight = this.row30Enabled ? 240 : 192;
-        this.leftBorder = Math.floor((this.canvasWidth - this.drawWidth) >> 1);
-        this.topBorder = Math.floor(((this.canvasHeight >> (this.screenMode === F18A.MODE_TEXT_80 ? 1 : 0)) - this.drawHeight) >> 1);
+        this.leftBorder = Math.floor((this.canvasWidth - (this.drawWidth << (this.isDoubledH() ? 1 : 0))) >> 1);
+        this.topBorder = Math.floor(((this.canvasHeight >> (this.isDoubledV() ? 1 : 0)) - this.drawHeight) >> 1);
         if (newDimensions) {
             this.fillCanvas(this.bgColor);
             this.imageData = new ImageData(new Uint8ClampedArray(this.wasmService.getMemoryBuffer(), imageDataAddr, (this.canvasWidth * this.canvasHeight) << 2), this.canvasWidth, this.canvasHeight);
@@ -490,7 +502,9 @@ export class F18A implements VDP {
             this.patternTableMask,
             this.colorTableMask,
             this.fgColor,
-            this.statusRegister
+            this.statusRegister,
+            this.isDoubledH(),
+            this.isDoubledV()
         );
 
         this.blanking = 1; // GPU code after scanline may depend on this
@@ -523,6 +537,10 @@ export class F18A implements VDP {
 
     updateCanvas() {
         this.canvasContext.putImageData(this.imageData, 0, 0);
+        this.drawSplash();
+    }
+
+    protected drawSplash() {
         if (this.splashImage && this.frameCounter < 300) {
             this.canvasContext.drawImage(this.splashImage, 0, 0);
         }
@@ -628,7 +646,7 @@ export class F18A implements VDP {
             // Status register select / counter control
             case 15:
                 this.statusRegisterNo = this.registers[15] & 0x0f;
-                this.log.debug("F18A status register " + this.statusRegisterNo + " selected.");
+                this.log.debug(this.getType() +  " status register " + this.statusRegisterNo + " selected.");
                 const wasRunning: boolean = (oldValue & 0x10) !== 0;
                 const running: boolean = (this.registers[15] & 0x10) !== 0;
                 if (wasRunning && !running) {
@@ -654,13 +672,13 @@ export class F18A implements VDP {
                     this.counterElapsed = 0;
                     this.counterStart = this.getTime();
                     this.counterSnap = 0;
-                    this.registers[15] &= 0xbf; // Clear trigger bit
+                    this.registers[15] &= 0xbf; // Clear trigger bit2
                 }
                 break;
             // Horz interrupt scan line, 0 to disable
             case 19:
                 this.interruptScanline = this.registers[19];
-                this.log.info("F18A interrupt scanline set to " + Util.toHexByte(this.interruptScanline) + " (not implemented)");
+                this.log.info(this.getType() + " interrupt scanline set to " + Util.toHexByte(this.interruptScanline) + " (not implemented)");
                 break;
             // Palette select
             case 24:
@@ -754,9 +772,9 @@ export class F18A implements VDP {
                 this.paletteRegisterNo = this.registers[47] & 0x3f;
                 this.paletteRegisterData = -1;
                 if (this.dataPortMode) {
-                    this.log.info("F18A Data port mode on.");
+                    this.log.info(this.getType() + " Data port mode on.");
                 } else {
-                    this.log.info("F18A Data port mode off.");
+                    this.log.info(this.getType() + " Data port mode off.");
                 }
                 break;
             // SIGNED two's-complement increment amount for VRAM address, defaults to 1
@@ -773,13 +791,13 @@ export class F18A implements VDP {
                     this.log.info("30 rows mode " + (this.row30Enabled ? "enabled" : "disabled") + ".");
                 }
                 this.tileColorMode = (this.registers[49] & 0x30) >> 4;
-                this.log.info("F18A Enhanced Color Mode " + this.tileColorMode + " selected for tiles.");
+                this.log.info(this.getType() + " Enhanced Color Mode " + this.tileColorMode + " selected for tiles.");
                 this.realSpriteYCoord = (this.registers[49] & 0x08) !== 0;
                 if (this.getVersion() <= 0x18) {
                     this.spriteLinkingEnabled = (this.registers[49] & 0x04) !== 0;
                 }
                 this.spriteColorMode = this.registers[49] & 0x03;
-                this.log.info("F18A Enhanced Color Mode " + this.spriteColorMode + " selected for sprites.");
+                this.log.info(this.getType() + " Enhanced Color Mode " + this.spriteColorMode + " selected for sprites.");
                 break;
             // Position vs name attributes, TL2 always on top
             case 50:
@@ -792,11 +810,11 @@ export class F18A implements VDP {
                 }
                 this.gpuHsyncTrigger = (this.registers[50] & 0x40) !== 0;
                 if (this.gpuHsyncTrigger) {
-                    this.log.debug("F18A Hsync trigger set");
+                    this.log.debug(this.getType() + " Hsync trigger set");
                 }
                 this.gpuVsyncTrigger = (this.registers[50] & 0x20) !== 0;
                 if (this.gpuVsyncTrigger) {
-                    this.log.info("F18A Vsync trigger set");
+                    this.log.info(this.getType() + " Vsync trigger set");
                 }
                 // 0 = normal, 1 = disable GM1, GM2, MCM, T40, T80
                 this.tileLayer1Enabled = (this.registers[50] & 0x10) === 0;
@@ -821,7 +839,7 @@ export class F18A implements VDP {
             // GPU address LSB
             case 55:
                 this.gpu.intReset();
-                this.log.info("F18A GPU triggered at " + Util.toHexWord((this.registers[54] << 8) | this.registers[55]));
+                this.log.info(this.getType() + " GPU triggered at " + Util.toHexWord((this.registers[54] << 8) | this.registers[55]));
                 this.gpu.setPc(this.registers[54] << 8 | this.registers[55]);
                 break;
             case 56:
@@ -830,19 +848,19 @@ export class F18A implements VDP {
                 } else {
                     this.gpu.setPc(this.registers[54] << 8 | this.registers[55]);
                     this.gpu.setIdle(true);
-                    this.log.info("F18A GPU stopped.");
+                    this.log.info(this.getType() + " GPU stopped.");
                 }
                 break;
             case 57:
                 if (!this.unlocked) {
                     if ((oldValue & 0x1c) === 0x1c && (this.registers[57] & 0x1c) === 0x1c) {
                         this.unlocked = true;
-                        this.log.info("F18A unlocked");
+                        this.log.info(this.getType() + " unlocked");
                     }
                 } else {
                     this.registers[57] = 0;
                     this.unlocked = false;
-                    this.log.info("F18A locked");
+                    this.log.info(this.getType() + " locked");
                 }
                 this.updateMode(this.registers[0], this.registers[1]);
                 break;
@@ -941,7 +959,7 @@ export class F18A implements VDP {
                 this.palette[this.paletteRegisterNo][1] = ((b & 0xf0) >> 4) * 17;
                 this.palette[this.paletteRegisterNo][2] = (b & 0x0f) * 17;
                 this.writePaletteEntryToWasm(this.paletteRegisterNo);
-                // this.log.info("F18A palette register " + this.paletteRegisterNo.toHexByte() + " set to " + (this.paletteRegisterData << 8 | b).toHexWord());
+                // this.log.info(this.getType() + " palette register " + this.paletteRegisterNo.toHexByte() + " set to " + (this.paletteRegisterData << 8 | b).toHexWord());
                 if (this.autoIncPaletteReg) {
                     this.paletteRegisterNo++;
                 }
@@ -950,7 +968,7 @@ export class F18A implements VDP {
                 if (!this.autoIncPaletteReg || this.paletteRegisterNo === 64) {
                     this.dataPortMode = false;
                     this.paletteRegisterNo = 0;
-                    this.log.info("F18A Data port mode off (auto).");
+                    this.log.info(this.getType() + " Data port mode off (auto).");
                 }
                 this.paletteRegisterData = -1;
             }
@@ -975,7 +993,7 @@ export class F18A implements VDP {
                 return i;
             case 1:
                 // ID
-                return 0xe0;
+                return this.getStatusRegister1Id();
             case 2:
                 // GPU status
                 return (this.gpu.isIdle() ? 0 : 0x80) | (this.ram[0xb000] & 0x7f);
@@ -1143,6 +1161,26 @@ export class F18A implements VDP {
         return F18A.VERSION;
     }
 
+    protected getSplashImagePath(): string {
+        return 'assets/images/f18a_bitmap_v' + this.getVersionNoString() + '.png';
+    }
+
+    protected getStatusRegister1Id(): number {
+        return 0xe0;
+    }
+
+    protected isDoubledH(): boolean {
+        return false;
+    }
+
+    protected isDoubledV(): boolean {
+        return this.screenMode === F18A.MODE_TEXT_80;
+    }
+
+    protected createGPU(): F18AGPU {
+        return new F18AGPU(this);
+    }
+
     getVersionNoString() {
         const version = this.getVersion();
         return ((version >> 4) & 0x0f) + "." + (version & 0x0f);
@@ -1290,6 +1328,200 @@ export class F18A implements VDP {
             }
         }
         canvasContext.putImageData(imageData, 0, 0);
+    }
+
+    isBitmapMode(): boolean {
+        return this.screenMode === F18A.MODE_BITMAP;
+    }
+
+    hasMultiplePages(): boolean {
+        return (this.registers[29] & 0x33) !== 0;
+    }
+
+    hasTileLayer2(): boolean {
+        return this.tileLayer2Enabled;
+    }
+
+    drawNameTableImage(canvas: HTMLCanvasElement, layer: number): void {
+        const reg29 = this.registers[29];
+        const isLayer2 = layer === 2;
+        const hPages = isLayer2 ? (reg29 & 0x20) !== 0 : (reg29 & 0x02) !== 0;
+        const vPages = isLayer2 ? (reg29 & 0x10) !== 0 : (reg29 & 0x01) !== 0;
+        const baseRows = this.row30Enabled ? 30 : 24;
+        const cols = hPages ? 64 : 32;
+
+        const rows = baseRows * (vPages ? 2 : 1);
+        const baseWidth = cols * 8;
+        const baseHeight = rows * 8;
+        const width = canvas.width = baseWidth;
+        const height = canvas.height = baseHeight;
+        const canvasContext = canvas.getContext('2d');
+        if (!canvasContext) {
+            return;
+        }
+        const imageData = canvasContext.createImageData(width, height);
+        const imageDataData = imageData.data;
+        const ram = this.ram;
+        const mask = (hPages ? 0x400 : 0x000) | (vPages ? 0x800 : 0x000);
+        const nameTable = (isLayer2 ? this.nameTable2 : this.nameTable) & ~mask;
+        const colorTable = isLayer2 ? this.colorTable2 : this.colorTable;
+        const charPatternTable = this.charPatternTable;
+        const colorTableMask = this.colorTableMask;
+        const patternTableMask = this.patternTableMask;
+        const screenMode = this.screenMode;
+        const tileColorMode = this.tileColorMode;
+        const tilePaletteSelect = isLayer2 ? this.tilePaletteSelect2 : this.tilePaletteSelect1;
+        const palette = this.palette;
+        const fgColor = this.fgColor;
+        const bgColor = this.bgColor;
+        const ecmPositionAttributes = this.ecmPositionAttributes;
+        const unlocked = this.unlocked;
+        let imageDataAddr = 0;
+        for (let row = 0; row < rows; row++) {
+            const pageRow = row >= baseRows;
+            const vOffset = pageRow ? 0x800 : 0;
+            const localRow = pageRow ? row - baseRows : row;
+            for (let line = 0; line < 8; line++) {
+                for (let col = 0; col < cols; col++) {
+                    const pageCol = col >= 32;
+                    const hOffset = pageCol ? 0x400 : 0;
+                    const localCol = pageCol ? col - 32 : col;
+                    const nameAddr = (nameTable | vOffset | hOffset) + localRow * 32 + localCol;
+                    const colorTableCell = (colorTable | vOffset | hOffset);
+                    const name = ram[nameAddr & 0x3fff];
+                    // Position index relative to canonical base for position-based attributes
+                    const positionIndex = localRow * 32 + localCol;
+                    let color = 0;
+                    for (let pixel = 0; pixel < 8; pixel++) {
+                        const bit = 0x80 >> pixel;
+                        switch (screenMode) {
+                            case F18A.MODE_GRAPHICS: {
+                                let lineOffset = line;
+                                let pixelOffset = pixel;
+                                let tileAttributeByte = 0;
+                                if (tileColorMode !== F18A.COLOR_MODE_NORMAL) {
+                                    tileAttributeByte = ram[colorTableCell + (ecmPositionAttributes ? positionIndex : name)];
+                                    if ((tileAttributeByte & 0x40) !== 0) {
+                                        pixelOffset = 7 - pixelOffset;
+                                    }
+                                    if ((tileAttributeByte & 0x20) !== 0) {
+                                        lineOffset = 7 - lineOffset;
+                                    }
+                                }
+                                const patternAddr = charPatternTable + (name << 3) + lineOffset;
+                                const patternByte = ram[patternAddr];
+                                const bitValue = 0x80 >> pixelOffset;
+                                switch (tileColorMode) {
+                                    case F18A.COLOR_MODE_NORMAL: {
+                                        const colorSet = ram[colorTableCell + (name >> 3)];
+                                        color = (patternByte & bitValue) !== 0 ? (colorSet & 0xF0) >> 4 : (colorSet & 0x0F || bgColor) +
+                                            tilePaletteSelect;
+                                        break;
+                                    }
+                                    case F18A.COLOR_MODE_ECM_1:
+                                        color = ((patternByte & bitValue) >> (7 - pixelOffset)) +
+                                            (tilePaletteSelect & 0x20) | ((tileAttributeByte & 0x0f) << 1);
+                                        break;
+                                    case F18A.COLOR_MODE_ECM_2:
+                                        color =
+                                            (((patternByte & bitValue) >> (7 - pixelOffset)) |
+                                            (((ram[(patternAddr + this.tilePlaneOffset) & 0x3fff] & bitValue) >> (7 - pixelOffset)) << 1)) +
+                                            ((tileAttributeByte & 0x0f) << 2);
+                                        break;
+                                    case F18A.COLOR_MODE_ECM_3:
+                                        color =
+                                            (((patternByte & bitValue) >> (7 - pixelOffset)) |
+                                            (((ram[(patternAddr + this.tilePlaneOffset) & 0x3fff] & bitValue) >> (7 - pixelOffset)) << 1) |
+                                            (((ram[(patternAddr + (this.tilePlaneOffset << 1)) & 0x3fff] & bitValue) >> (7 - pixelOffset)) << 2)) +
+                                            ((tileAttributeByte & 0x0e) << 2);
+                                        break;
+                                }
+                                break;
+                            }
+                            case F18A.MODE_BITMAP: {
+                                const sectionOffset = (localRow >= 16 ? 2 : localRow >= 8 ? 1 : 0) << 11;
+                                const nameInSection = (localRow % 8) * 32 + localCol;
+                                const tableOffset = sectionOffset + (nameInSection << 3);
+                                const colorByte = ram[colorTableCell + (tableOffset & colorTableMask) + line];
+                                const patternByte = ram[charPatternTable + (tableOffset & patternTableMask) + line];
+                                color = (patternByte & bit) !== 0 ? (colorByte & 0xF0) >> 4 : colorByte & 0x0F;
+                                break;
+                            }
+                            case F18A.MODE_TEXT: {
+                                const patternByte = ram[charPatternTable + (name << 3) + line];
+                                if (pixel < 6) {
+                                    if (unlocked && ecmPositionAttributes) {
+                                        const tileAttributeByte = ram[colorTableCell + positionIndex];
+                                        color = (patternByte & (0x80 >> pixel)) !== 0 ? (tileAttributeByte & 0xF0) >> 4 : tileAttributeByte & 0x0F;
+                                    } else {
+                                        color = (patternByte & (0x80 >> pixel)) !== 0 ? fgColor : bgColor;
+                                    }
+                                } else {
+                                    color = bgColor;
+                                }
+                                break;
+                            }
+                            default:
+                                color = bgColor;
+                                break;
+                        }
+                        const rgbColor = palette[color];
+                        imageDataData[imageDataAddr++] = rgbColor[0];
+                        imageDataData[imageDataAddr++] = rgbColor[1];
+                        imageDataData[imageDataAddr++] = rgbColor[2];
+                        imageDataData[imageDataAddr++] = 255;
+                    }
+                }
+            }
+        }
+        canvasContext.putImageData(imageData, 0, 0);
+        // Draw viewport rectangle showing the active display area
+        const viewportWidth = this.screenMode === F18A.MODE_TEXT_80 ? 512 : 256;
+        const viewportHeight = this.row30Enabled ? 240 : 192;
+        // Determine primary page offset from unmasked name table address
+        const unmaskedNameTable = isLayer2 ? (this.registers[10] & 0x0f) << 10 : this.nameTable;
+        const pageFlags = unmaskedNameTable & mask;
+        const hPageOffset = (pageFlags & 0x400) ? 256 : 0;
+        const vPageOffset = (pageFlags & 0x800) ? 192 : 0;
+        // Scroll registers give pixel offset within the primary page
+        const hScroll = isLayer2 ? this.hScroll2 : this.hScroll1;
+        const vScroll = isLayer2 ? this.vScroll2 : this.vScroll1;
+        const viewX = hPageOffset + hScroll;
+        const viewY = vPageOffset + vScroll;
+        canvasContext.strokeStyle = 'rgba(255, 255, 0, 0.8)';
+        canvasContext.lineWidth = 2;
+        // Draw the viewport rectangle, handling wrapping across page boundaries
+        const totalWidth = width;
+        const totalHeight = height;
+        const parts: [number, number, number, number][] = [];
+        const x2 = viewX + viewportWidth;
+        const y2 = viewY + viewportHeight;
+        const wrapsH = x2 > totalWidth;
+        const wrapsV = y2 > totalHeight;
+        if (!wrapsH && !wrapsV) {
+            parts.push([viewX, viewY, viewportWidth, viewportHeight]);
+        } else if (wrapsH && !wrapsV) {
+            parts.push([viewX, viewY, totalWidth - viewX, viewportHeight]);
+            parts.push([0, viewY, x2 - totalWidth, viewportHeight]);
+        } else if (!wrapsH && wrapsV) {
+            parts.push([viewX, viewY, viewportWidth, totalHeight - viewY]);
+            parts.push([viewX, 0, viewportWidth, y2 - totalHeight]);
+        } else {
+            parts.push([viewX, viewY, totalWidth - viewX, totalHeight - viewY]);
+            parts.push([0, viewY, x2 - totalWidth, totalHeight - viewY]);
+            parts.push([viewX, 0, totalWidth - viewX, y2 - totalHeight]);
+            parts.push([0, 0, x2 - totalWidth, y2 - totalHeight]);
+        }
+        // Tint the non-viewport area, then restore viewport pixels
+        canvasContext.fillStyle = 'rgba(0, 0, 0, 0.4)';
+        canvasContext.fillRect(0, 0, totalWidth, totalHeight);
+        for (const [rx, ry, rw, rh] of parts) {
+            canvasContext.putImageData(imageData, 0, 0, rx, ry, rw, rh);
+        }
+        // Draw viewport border
+        for (const [rx, ry, rw, rh] of parts) {
+            canvasContext.strokeRect(rx + 0.5, ry + 0.5, rw - 1, rh - 1);
+        }
     }
 
     drawSpritePatternImage(canvas: HTMLCanvasElement, gap: boolean) {

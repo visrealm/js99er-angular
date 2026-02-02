@@ -23,7 +23,7 @@ export class F18AGPU extends CPUCommon implements CPU {
     ];
 
     private f18a: F18A;
-    private vdpRAM: Uint8Array;
+    protected vdpRAM: Uint8Array;
     private flash: F18AFlash;
     private tmpColor: number;
 

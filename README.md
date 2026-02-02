@@ -4,6 +4,16 @@ This is the 'new' version of js99er.net developed using Angular and TypeScript. 
 
 This project was originally generated with [Angular CLI](https://github.com/angular/angular-cli) version 1.7.3 (currently 18.2.7).
 
+## visrealm version
+
+This version has been modified to add support for the [PICO9918](https://github.com/visrealm/pico9918). 
+
+Although mostly compatible with the F18A, the PICO9918 has additional VRAM available to the GPU and is able to save and load game data. The version ID for the PICO9918 detection is also different but compatible with the F18A.
+
+Live version is served here: [https://js99er.visrealm.au](https://js99er.visrealm.au/)
+
+If you're looking for the original JS99'er, be sure to use [https://github.com/Rasmus-M/js99er-angular](https://github.com/Rasmus-M/js99er-angular) instead.
+
 ## Setting up the development environment
 
 * Clone the repository to a folder on your computer
