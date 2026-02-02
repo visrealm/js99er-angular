@@ -2,7 +2,7 @@ import {Component, Inject} from "@angular/core";
 import {DialogRef} from "@angular/cdk/dialog";
 import {MAT_DIALOG_DATA} from "@angular/material/dialog";
 import {Breakpoint, BreakpointType} from "../../classes/breakpoint";
-import {faBan, faTrash} from "@fortawesome/free-solid-svg-icons";
+import {faTrash} from "@fortawesome/free-solid-svg-icons";
 
 export interface DebuggerDialogData {
     cycleCountStart: number;
@@ -17,6 +17,7 @@ export interface DebuggerDialogData {
 })
 export class DebuggerDialogComponent {
 
+    protected readonly BreakpointType = BreakpointType;
     protected readonly deleteIcon = faTrash;
 
     constructor(
@@ -25,7 +26,7 @@ export class DebuggerDialogComponent {
     ) {}
 
     addBreakpoint() {
-        this.data.breakpoints.push(new Breakpoint(BreakpointType.INSTRUCTION, NaN, 0xffff));
+        this.data.breakpoints.push(new Breakpoint(BreakpointType.INSTRUCTION, NaN));
     }
 
     deleteBreakpoint(breakpoint: Breakpoint) {

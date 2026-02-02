@@ -49,7 +49,7 @@ export class TI994A implements Console, Stateful {
     private settings: Settings;
     private databaseService: DatabaseService;
     private wasmService: WasmService;
-    private onBreakpoint: (cpu: CPU) => void;
+    private onBreakpoint: () => void;
 
     private memory: Memory;
     private cpu: CPU;
@@ -90,7 +90,7 @@ export class TI994A implements Console, Stateful {
         settings: Settings,
         databaseService: DatabaseService,
         wasmService: WasmService,
-        onBreakpoint: (cpu: CPU) => void
+        onBreakpoint: () => void
     ) {
         this.document = document;
         this.canvas = canvas;
@@ -119,7 +119,7 @@ export class TI994A implements Console, Stateful {
 
     private assemble(diskImages: DiskImage[]) {
         this.cru = new CRU(this);
-        this.memory = new Memory(this, this.settings);
+        this.memory = new Memory(this, this.settings, this.onBreakpoint);
         this.cpu = new TMS9900(this);
         this.tape = new Tape();
         this.setVDP();
@@ -357,7 +357,7 @@ export class TI994A implements Console, Stateful {
                 extraCycles = cpu.run(cyclesPerScanline - extraCycles, skipBreakpoint);
                 if (cpu.isStoppedAtBreakpoint()) {
                     if (this.onBreakpoint) {
-                        this.onBreakpoint(cpu);
+                        this.onBreakpoint();
                     }
                     return;
                 }
@@ -369,7 +369,7 @@ export class TI994A implements Console, Stateful {
                 gpu.run(f18ACyclesPerScanline, skipBreakpoint);
                 if (gpu.isStoppedAtBreakpoint()) {
                     if (this.onBreakpoint) {
-                        this.onBreakpoint(gpu);
+                        this.onBreakpoint();
                     }
                     return;
                 }
