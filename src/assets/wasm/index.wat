@@ -1949,12 +1949,12 @@
             i32.const 0
             i32.eq
             if (result i32)
-             local.get $pixelOn
+             local.get $spriteOpaq
             else
              i32.const 0
             end
             if
-             i32.const -1
+             i32.const 255
              local.set $sprColor
             end
             local.get $spriteX
@@ -3853,9 +3853,19 @@
        i32.const 0
        i32.gt_s
        if
-        local.get $spriteColor
-        i32.const -1
-        i32.eq
+        local.get $pico9918
+        if (result i32)
+         local.get $unlocked
+        else
+         i32.const 0
+        end
+        if (result i32)
+         local.get $spriteColor
+         i32.const 255
+         i32.eq
+        else
+         i32.const 0
+        end
         if
          i32.const 0
          local.set $spriteColor

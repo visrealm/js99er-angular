@@ -288,7 +288,7 @@ export function drawScanline(
                 if (spritesEnabled && !(tilePriority && havePixel)) {
                     let spriteColor: i32 = getSpriteColorBuffer(x) - 1;
                     if (spriteColor > 0) {
-                        if (spriteColor === 0xffffffff) spriteColor = 0;
+                        if (pico9918 && unlocked && (spriteColor === 0xff)) spriteColor = 0;
                         color = spriteColor;
                         paletteBaseIndex = getSpritePaletteBaseIndexBuffer(x);
                     }
@@ -630,7 +630,7 @@ function prepareSprites(
                                     break;
                             }
                             if (sprColor > 0 || pixelOn) {
-                                if ((sprColor === 0) && pixelOn) sprColor = 0xffffffff;
+                                if ((sprColor === 0) && spriteOpaq) sprColor = 0xff;
                                 let x2: i32 = spriteX + (spriteFlipX ? spriteDimensionX - ((dx + spriteBitShift1 + 1) << spriteMag) : ((dx + spriteBitShift1) << spriteMag));
                                 if (x2 >= 0 && x2 < drawWidth) {
                                     if (getSpriteColorBuffer(x2) === 0) {
