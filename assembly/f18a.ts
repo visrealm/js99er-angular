@@ -80,7 +80,8 @@ export function drawScanline(
     fgColor: i32,
     statusRegister: u8,
     doublePixelsH: bool,
-    doublePixelsV: bool
+    doublePixelsV: bool,
+    pico9918: bool
 ): u8 {
     let pixelOffset: i32 = (y * width) << (doublePixelsV ? 1 : 0);
     if (displayOn && y >= topBorder && y < topBorder + drawHeight) {
@@ -104,7 +105,8 @@ export function drawScanline(
                 spriteMag,
                 spriteAttributeTable,
                 spritePatternTable,
-                statusRegister
+                statusRegister,
+                pico9918
             );
         }
         let scrollWidth: i32 = drawWidth;
@@ -284,8 +286,9 @@ export function drawScanline(
                 }
                 // Sprite layer
                 if (spritesEnabled && !(tilePriority && havePixel)) {
-                    const spriteColor: i32 = getSpriteColorBuffer(x) - 1;
+                    let spriteColor: i32 = getSpriteColorBuffer(x) - 1;
                     if (spriteColor > 0) {
+                        if (spriteColor === 0xffffffff) spriteColor = 0;
                         color = spriteColor;
                         paletteBaseIndex = getSpritePaletteBaseIndexBuffer(x);
                     }
@@ -521,7 +524,8 @@ function prepareSprites(
     spriteMag: i32,
     spriteAttributeTable: i32,
     spritePatternTable: i32,
-    statusRegister: u8
+    statusRegister: u8,
+    pico9918: bool
 ): u8 {
     initSpriteBuffer(drawWidth);
     let spritesOnLine: i32 = 0;
@@ -574,6 +578,7 @@ function prepareSprites(
                     const spriteFlipY: bool = unlocked && (spriteAttr & 0x20) !== 0;
                     const spriteFlipX: bool = unlocked && (spriteAttr & 0x40) !== 0;
                     const baseColor: i32 = spriteAttr & 0x0F;
+                    const spriteOpaq: bool = pico9918 && unlocked && defaultSpriteSize && ((spriteAttr & 0x10) !== 0);
                     let sprPaletteBaseIndex: i32 = 0;
                     switch (spriteColorMode) {
                         case COLOR_MODE_NORMAL:
@@ -603,10 +608,10 @@ function prepareSprites(
                         let spriteBitShift2: i32 = 7;
                         for (let spriteBitShift1: i32 = 0; spriteBitShift1 < 8; spriteBitShift1++) {
                             let sprColor: i32 = 0;
-                            let pixelOn: bool = false;
+                            let pixelOn: bool = spriteOpaq;
                             switch (spriteColorMode) {
                                 case COLOR_MODE_NORMAL:
-                                    pixelOn = (spritePatternByte0 & spriteBit) !== 0;
+                                    pixelOn = spriteOpaq  || (spritePatternByte0 & spriteBit) !== 0;
                                     sprColor = pixelOn ? baseColor : 0;
                                     break;
                                 case COLOR_MODE_ECM_1:
@@ -625,6 +630,7 @@ function prepareSprites(
                                     break;
                             }
                             if (sprColor > 0 || pixelOn) {
+                                if ((sprColor === 0) && pixelOn) sprColor = 0xffffffff;
                                 let x2: i32 = spriteX + (spriteFlipX ? spriteDimensionX - ((dx + spriteBitShift1 + 1) << spriteMag) : ((dx + spriteBitShift1) << spriteMag));
                                 if (x2 >= 0 && x2 < drawWidth) {
                                     if (getSpriteColorBuffer(x2) === 0) {

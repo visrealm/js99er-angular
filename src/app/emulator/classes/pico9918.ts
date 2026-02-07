@@ -10,7 +10,8 @@ export class PICO9918 extends F18A {
 
     constructor(canvas: HTMLCanvasElement, console: TI994A, wasmService: WasmService) {
         Log.getLog().info("PICO9918 emulation enabled");
-        super(canvas, console, wasmService, false);        
+        super(canvas, console, wasmService, false);
+        this.isPico9918 = true;
     }
 
     override getType(): VDPType {

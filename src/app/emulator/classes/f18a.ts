@@ -203,6 +203,7 @@ export class F18A implements VDP {
     protected splashImage: HTMLImageElement;
 
     protected gpu: F18AGPU;
+    protected isPico9918: boolean;
 
     private spritePatternColorMap: {};
 
@@ -212,6 +213,7 @@ export class F18A implements VDP {
         this.canvas = canvas;
         this.console = console;
         this.wasmService = wasmService;
+        this.isPico9918 = false;
         const canvasContext = canvas.getContext('2d');
         if (canvasContext) {
             this.canvasContext = canvasContext;
@@ -504,7 +506,8 @@ export class F18A implements VDP {
             this.fgColor,
             this.statusRegister,
             this.isDoubledH(),
-            this.isDoubledV()
+            this.isDoubledV(),
+            this.isPico9918
         );
 
         this.blanking = 1; // GPU code after scanline may depend on this

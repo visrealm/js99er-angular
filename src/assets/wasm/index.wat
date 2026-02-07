@@ -3,9 +3,9 @@
  (type $1 (func))
  (type $2 (func (param i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32) (result i32)))
  (type $3 (func (param i32)))
- (type $4 (func (param i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32) (result i32)))
+ (type $4 (func (param i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32) (result i32)))
  (type $5 (func (param i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32)))
- (type $6 (func (param i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32) (result i32)))
+ (type $6 (func (param i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32) (result i32)))
  (import "env" "memory" (memory $0 2))
  (global $assembly/tms9918a/MODE_GRAPHICS i32 (i32.const 0))
  (global $assembly/tms9918a/MODE_TEXT i32 (i32.const 1))
@@ -1273,7 +1273,7 @@
   local.get $value
   i32.store
  )
- (func $assembly/f18a/prepareSprites (param $y i32) (param $drawWidth i32) (param $screenMode i32) (param $row30Enabled i32) (param $unlocked i32) (param $spriteLinkingEnabled i32) (param $realSpriteYCoord i32) (param $maxSprites i32) (param $maxScanlineSprites i32) (param $spriteColorMode i32) (param $spritePaletteSelect i32) (param $spritePlaneOffset i32) (param $defaultSpriteSize i32) (param $spriteMag i32) (param $spriteAttributeTable i32) (param $spritePatternTable i32) (param $statusRegister i32) (result i32)
+ (func $assembly/f18a/prepareSprites (param $y i32) (param $drawWidth i32) (param $screenMode i32) (param $row30Enabled i32) (param $unlocked i32) (param $spriteLinkingEnabled i32) (param $realSpriteYCoord i32) (param $maxSprites i32) (param $maxScanlineSprites i32) (param $spriteColorMode i32) (param $spritePaletteSelect i32) (param $spritePlaneOffset i32) (param $defaultSpriteSize i32) (param $spriteMag i32) (param $spriteAttributeTable i32) (param $spritePatternTable i32) (param $statusRegister i32) (param $pico9918 i32) (result i32)
   (local $spritesOnLine i32)
   (local $outOfScreenY i32)
   (local $negativeScreenY i32)
@@ -1282,52 +1282,53 @@
   (local $index i32)
   (local $addr i32)
   (local $parentSpriteAttrAddr i32)
-  (local $addr|25 i32)
+  (local $addr|26 i32)
   (local $spriteLinkingAttr i32)
-  (local $addr|27 i32)
+  (local $addr|28 i32)
   (local $spriteY i32)
-  (local $addr|29 i32)
   (local $addr|30 i32)
+  (local $addr|31 i32)
   (local $spriteAttr i32)
   (local $spriteSize i32)
   (local $spriteHeight i32)
   (local $spriteDimensionY i32)
   (local $spriteWidth i32)
   (local $spriteDimensionX i32)
-  (local $addr|37 i32)
+  (local $addr|38 i32)
   (local $spriteX i32)
-  (local $addr|39 i32)
   (local $addr|40 i32)
   (local $addr|41 i32)
+  (local $addr|42 i32)
   (local $patternNo i32)
   (local $spriteFlipY i32)
   (local $spriteFlipX i32)
   (local $baseColor i32)
+  (local $spriteOpaq i32)
   (local $sprPaletteBaseIndex i32)
-  (local $47 i32)
+  (local $49 i32)
   (local $spritePatternBaseAddr i32)
   (local $dy i32)
   (local $dx i32)
   (local $spritePatternAddr i32)
-  (local $addr|52 i32)
-  (local $spritePatternByte0 i32)
   (local $addr|54 i32)
-  (local $spritePatternByte1 i32)
+  (local $spritePatternByte0 i32)
   (local $addr|56 i32)
+  (local $spritePatternByte1 i32)
+  (local $addr|58 i32)
   (local $spritePatternByte2 i32)
   (local $spriteBit i32)
   (local $spriteBitShift2 i32)
   (local $spriteBitShift1 i32)
   (local $sprColor i32)
   (local $pixelOn i32)
-  (local $63 i32)
+  (local $65 i32)
   (local $x2 i32)
   (local $offset i32)
-  (local $offset|66 i32)
-  (local $x1 i32)
   (local $offset|68 i32)
-  (local $spriteColorBufferValue i32)
+  (local $x1 i32)
   (local $offset|70 i32)
+  (local $spriteColorBufferValue i32)
+  (local $offset|72 i32)
   (local $spritePaletteBaseIndexBufferValue i32)
   local.get $drawWidth
   call $assembly/f18a/initSpriteBuffer
@@ -1405,9 +1406,9 @@
       i32.const 2
       i32.shr_s
       i32.add
-      local.set $addr|25
+      local.set $addr|26
       global.get $assembly/f18a/vdpRAMAddr
-      local.get $addr|25
+      local.get $addr|26
       i32.add
       i32.load8_u
       br $assembly/f18a/getRAMByte|inlined.1
@@ -1433,9 +1434,9 @@
     end
     block $assembly/f18a/getRAMByte|inlined.2 (result i32)
      local.get $spriteAttrAddr
-     local.set $addr|27
+     local.set $addr|28
      global.get $assembly/f18a/vdpRAMAddr
-     local.get $addr|27
+     local.get $addr|28
      i32.add
      i32.load8_u
      br $assembly/f18a/getRAMByte|inlined.2
@@ -1450,9 +1451,9 @@
      local.get $spriteY
      block $assembly/f18a/getRAMByte|inlined.3 (result i32)
       local.get $parentSpriteAttrAddr
-      local.set $addr|29
+      local.set $addr|30
       global.get $assembly/f18a/vdpRAMAddr
-      local.get $addr|29
+      local.get $addr|30
       i32.add
       i32.load8_u
       br $assembly/f18a/getRAMByte|inlined.3
@@ -1496,9 +1497,9 @@
       local.get $spriteAttrAddr
       i32.const 3
       i32.add
-      local.set $addr|30
+      local.set $addr|31
       global.get $assembly/f18a/vdpRAMAddr
-      local.get $addr|30
+      local.get $addr|31
       i32.add
       i32.load8_u
       br $assembly/f18a/getRAMByte|inlined.4
@@ -1556,9 +1557,9 @@
         local.get $spriteAttrAddr
         i32.const 1
         i32.add
-        local.set $addr|37
+        local.set $addr|38
         global.get $assembly/f18a/vdpRAMAddr
-        local.get $addr|37
+        local.get $addr|38
         i32.add
         i32.load8_u
         br $assembly/f18a/getRAMByte|inlined.5
@@ -1587,9 +1588,9 @@
          local.get $parentSpriteAttrAddr
          i32.const 1
          i32.add
-         local.set $addr|39
+         local.set $addr|40
          global.get $assembly/f18a/vdpRAMAddr
-         local.get $addr|39
+         local.get $addr|40
          i32.add
          i32.load8_u
          br $assembly/f18a/getRAMByte|inlined.6
@@ -1604,9 +1605,9 @@
          local.get $parentSpriteAttrAddr
          i32.const 3
          i32.add
-         local.set $addr|40
+         local.set $addr|41
          global.get $assembly/f18a/vdpRAMAddr
-         local.get $addr|40
+         local.get $addr|41
          i32.add
          i32.load8_u
          br $assembly/f18a/getRAMByte|inlined.7
@@ -1626,9 +1627,9 @@
         local.get $spriteAttrAddr
         i32.const 2
         i32.add
-        local.set $addr|41
+        local.set $addr|42
         global.get $assembly/f18a/vdpRAMAddr
-        local.get $addr|41
+        local.get $addr|42
         i32.add
         i32.load8_u
         br $assembly/f18a/getRAMByte|inlined.8
@@ -1669,6 +1670,27 @@
        i32.const 15
        i32.and
        local.set $baseColor
+       local.get $pico9918
+       if (result i32)
+        local.get $unlocked
+       else
+        i32.const 0
+       end
+       if (result i32)
+        local.get $defaultSpriteSize
+       else
+        i32.const 0
+       end
+       if (result i32)
+        local.get $spriteAttr
+        i32.const 16
+        i32.and
+        i32.const 0
+        i32.ne
+       else
+        i32.const 0
+       end
+       local.set $spriteOpaq
        i32.const 0
        local.set $sprPaletteBaseIndex
        block $break|1
@@ -1677,20 +1699,20 @@
           block $case1|1
            block $case0|1
             local.get $spriteColorMode
-            local.set $47
-            local.get $47
+            local.set $49
+            local.get $49
             global.get $assembly/f18a/COLOR_MODE_NORMAL
             i32.eq
             br_if $case0|1
-            local.get $47
+            local.get $49
             global.get $assembly/f18a/COLOR_MODE_ECM_1
             i32.eq
             br_if $case1|1
-            local.get $47
+            local.get $49
             global.get $assembly/f18a/COLOR_MODE_ECM_2
             i32.eq
             br_if $case2|1
-            local.get $47
+            local.get $49
             global.get $assembly/f18a/COLOR_MODE_ECM_3
             i32.eq
             br_if $case3|1
@@ -1762,9 +1784,9 @@
          local.set $spritePatternAddr
          block $assembly/f18a/getRAMByte|inlined.9 (result i32)
           local.get $spritePatternAddr
-          local.set $addr|52
+          local.set $addr|54
           global.get $assembly/f18a/vdpRAMAddr
-          local.get $addr|52
+          local.get $addr|54
           i32.add
           i32.load8_u
           br $assembly/f18a/getRAMByte|inlined.9
@@ -1778,9 +1800,9 @@
           i32.add
           i32.const 16383
           i32.and
-          local.set $addr|54
+          local.set $addr|56
           global.get $assembly/f18a/vdpRAMAddr
-          local.get $addr|54
+          local.get $addr|56
           i32.add
           i32.load8_u
           br $assembly/f18a/getRAMByte|inlined.10
@@ -1796,9 +1818,9 @@
           i32.add
           i32.const 16383
           i32.and
-          local.set $addr|56
+          local.set $addr|58
           global.get $assembly/f18a/vdpRAMAddr
-          local.get $addr|56
+          local.get $addr|58
           i32.add
           i32.load8_u
           br $assembly/f18a/getRAMByte|inlined.11
@@ -1819,7 +1841,7 @@
           if
            i32.const 0
            local.set $sprColor
-           i32.const 0
+           local.get $spriteOpaq
            local.set $pixelOn
            block $break|4
             block $case3|4
@@ -1827,30 +1849,35 @@
               block $case1|4
                block $case0|4
                 local.get $spriteColorMode
-                local.set $63
-                local.get $63
+                local.set $65
+                local.get $65
                 global.get $assembly/f18a/COLOR_MODE_NORMAL
                 i32.eq
                 br_if $case0|4
-                local.get $63
+                local.get $65
                 global.get $assembly/f18a/COLOR_MODE_ECM_1
                 i32.eq
                 br_if $case1|4
-                local.get $63
+                local.get $65
                 global.get $assembly/f18a/COLOR_MODE_ECM_2
                 i32.eq
                 br_if $case2|4
-                local.get $63
+                local.get $65
                 global.get $assembly/f18a/COLOR_MODE_ECM_3
                 i32.eq
                 br_if $case3|4
                 br $break|4
                end
-               local.get $spritePatternByte0
-               local.get $spriteBit
-               i32.and
-               i32.const 0
-               i32.ne
+               local.get $spriteOpaq
+               if (result i32)
+                i32.const 1
+               else
+                local.get $spritePatternByte0
+                local.get $spriteBit
+                i32.and
+                i32.const 0
+                i32.ne
+               end
                local.set $pixelOn
                local.get $pixelOn
                if (result i32)
@@ -1918,6 +1945,18 @@
             local.get $pixelOn
            end
            if
+            local.get $sprColor
+            i32.const 0
+            i32.eq
+            if (result i32)
+             local.get $pixelOn
+            else
+             i32.const 0
+            end
+            if
+             i32.const -1
+             local.set $sprColor
+            end
             local.get $spriteX
             local.get $spriteFlipX
             if (result i32)
@@ -1998,9 +2037,9 @@
              if
               block $assembly/f18a/getSpriteColorBuffer|inlined.1 (result i32)
                local.get $x2
-               local.set $offset|66
+               local.set $offset|68
                global.get $assembly/f18a/spriteColorBufferAddr
-               local.get $offset|66
+               local.get $offset|68
                i32.const 2
                i32.shl
                i32.add
@@ -2106,9 +2145,9 @@
     if
      block $assembly/f18a/getSpriteColorBuffer|inlined.2 (result i32)
       local.get $x1
-      local.set $offset|68
+      local.set $offset|70
       global.get $assembly/f18a/spriteColorBufferAddr
-      local.get $offset|68
+      local.get $offset|70
       i32.const 2
       i32.shl
       i32.add
@@ -2118,9 +2157,9 @@
      local.set $spriteColorBufferValue
      block $assembly/f18a/getSpritePaletteBaseIndexBuffer|inlined.0 (result i32)
       local.get $x1
-      local.set $offset|70
+      local.set $offset|72
       global.get $assembly/f18a/spritePaletteBaseIndexBufferAddr
-      local.get $offset|70
+      local.get $offset|72
       i32.const 2
       i32.shl
       i32.add
@@ -3097,7 +3136,7 @@
   local.get $paletteBaseIndex
   global.set $assembly/f18a/pixelPaletteBaseIndex
  )
- (func $assembly/f18a/drawScanline (param $y i32) (param $width i32) (param $displayOn i32) (param $topBorder i32) (param $drawHeight i32) (param $unlocked i32) (param $screenMode i32) (param $drawWidth i32) (param $vPageSize1 i32) (param $vPageSize2 i32) (param $hPageSize1 i32) (param $hPageSize2 i32) (param $vScroll1 i32) (param $vScroll2 i32) (param $tileLayer2Enabled i32) (param $bitmapEnable i32) (param $bitmapBaseAddr i32) (param $bitmapX i32) (param $bitmapY i32) (param $bitmapWidth i32) (param $bitmapHeight i32) (param $bitmapTransparent i32) (param $bitmapFat i32) (param $bitmapPriority i32) (param $bitmapPaletteSelect i32) (param $nameTable i32) (param $nameTable2 i32) (param $scanLines i32) (param $bgColor i32) (param $leftBorder i32) (param $tileLayer1Enabled i32) (param $tileMap2AlwaysOnTop i32) (param $colorTable i32) (param $colorTable2 i32) (param $hScroll1 i32) (param $hScroll2 i32) (param $tilePaletteSelect1 i32) (param $tilePaletteSelect2 i32) (param $tileColorMode i32) (param $row30Enabled i32) (param $spriteLinkingEnabled i32) (param $realSpriteYCoord i32) (param $maxSprites i32) (param $maxScanlineSprites i32) (param $spriteColorMode i32) (param $spritePaletteSelect i32) (param $spritePlaneOffset i32) (param $spriteSize i32) (param $spriteMag i32) (param $spriteAttributeTable i32) (param $spritePatternTable i32) (param $ecmPositionAttributes i32) (param $charPatternTable i32) (param $tilePlaneOffset i32) (param $patternTableMask i32) (param $colorTableMask i32) (param $fgColor i32) (param $statusRegister i32) (param $doublePixelsH i32) (param $doublePixelsV i32) (result i32)
+ (func $assembly/f18a/drawScanline (param $y i32) (param $width i32) (param $displayOn i32) (param $topBorder i32) (param $drawHeight i32) (param $unlocked i32) (param $screenMode i32) (param $drawWidth i32) (param $vPageSize1 i32) (param $vPageSize2 i32) (param $hPageSize1 i32) (param $hPageSize2 i32) (param $vScroll1 i32) (param $vScroll2 i32) (param $tileLayer2Enabled i32) (param $bitmapEnable i32) (param $bitmapBaseAddr i32) (param $bitmapX i32) (param $bitmapY i32) (param $bitmapWidth i32) (param $bitmapHeight i32) (param $bitmapTransparent i32) (param $bitmapFat i32) (param $bitmapPriority i32) (param $bitmapPaletteSelect i32) (param $nameTable i32) (param $nameTable2 i32) (param $scanLines i32) (param $bgColor i32) (param $leftBorder i32) (param $tileLayer1Enabled i32) (param $tileMap2AlwaysOnTop i32) (param $colorTable i32) (param $colorTable2 i32) (param $hScroll1 i32) (param $hScroll2 i32) (param $tilePaletteSelect1 i32) (param $tilePaletteSelect2 i32) (param $tileColorMode i32) (param $row30Enabled i32) (param $spriteLinkingEnabled i32) (param $realSpriteYCoord i32) (param $maxSprites i32) (param $maxScanlineSprites i32) (param $spriteColorMode i32) (param $spritePaletteSelect i32) (param $spritePlaneOffset i32) (param $spriteSize i32) (param $spriteMag i32) (param $spriteAttributeTable i32) (param $spritePatternTable i32) (param $ecmPositionAttributes i32) (param $charPatternTable i32) (param $tilePlaneOffset i32) (param $patternTableMask i32) (param $colorTableMask i32) (param $fgColor i32) (param $statusRegister i32) (param $doublePixelsH i32) (param $doublePixelsV i32) (param $pico9918 i32) (result i32)
   (local $pixelOffset i32)
   (local $scrollWidth i32)
   (local $scrollHeight i32)
@@ -3106,14 +3145,14 @@
   (local $nameTableBaseAddr i32)
   (local $y1 i32)
   (local $rowOffset i32)
-  (local $68 i32)
+  (local $69 i32)
   (local $lineOffset i32)
   (local $rowOffset2 i32)
   (local $nameTableCanonicalBase2 i32)
   (local $nameTableBaseAddr2 i32)
   (local $lineOffset2 i32)
   (local $y12 i32)
-  (local $75 i32)
+  (local $76 i32)
   (local $bitmapX2 i32)
   (local $bitmapY1 i32)
   (local $bitmapY2 i32)
@@ -3135,31 +3174,31 @@
   (local $bitmapColor i32)
   (local $offset i32)
   (local $spriteColor i32)
-  (local $offset|97 i32)
+  (local $offset|98 i32)
   (local $i i32)
   (local $rgbColor i32)
-  (local $100 i32)
-  (local $pixelOffset|101 i32)
+  (local $101 i32)
+  (local $pixelOffset|102 i32)
   (local $value i32)
-  (local $i|103 i32)
-  (local $rgbColor|104 i32)
-  (local $xc|105 i32)
-  (local $106 i32)
-  (local $pixelOffset|107 i32)
-  (local $value|108 i32)
+  (local $i|104 i32)
+  (local $rgbColor|105 i32)
+  (local $xc|106 i32)
+  (local $107 i32)
+  (local $pixelOffset|108 i32)
+  (local $value|109 i32)
   (local $pixelOffset2 i32)
-  (local $xc|110 i32)
-  (local $pixelOffset|111 i32)
-  (local $rgbColor|112 i32)
+  (local $xc|111 i32)
+  (local $pixelOffset|112 i32)
+  (local $rgbColor|113 i32)
   (local $colorComponent i32)
-  (local $colorComponent|114 i32)
   (local $colorComponent|115 i32)
+  (local $colorComponent|116 i32)
   (local $dimmedRgbColor i32)
-  (local $117 i32)
-  (local $pixelOffset|118 i32)
-  (local $value|119 i32)
-  (local $pixelOffset|120 i32)
-  (local $width|121 i32)
+  (local $118 i32)
+  (local $pixelOffset|119 i32)
+  (local $value|120 i32)
+  (local $pixelOffset|121 i32)
+  (local $width|122 i32)
   local.get $y
   local.get $width
   i32.mul
@@ -3226,6 +3265,7 @@
     local.get $spriteAttributeTable
     local.get $spritePatternTable
     local.get $statusRegister
+    local.get $pico9918
     call $assembly/f18a/prepareSprites
     local.set $statusRegister
    end
@@ -3299,24 +3339,24 @@
        block $case1|0
         block $case0|0
          local.get $screenMode
-         local.set $68
-         local.get $68
+         local.set $69
+         local.get $69
          global.get $assembly/f18a/MODE_GRAPHICS
          i32.eq
          br_if $case0|0
-         local.get $68
+         local.get $69
          global.get $assembly/f18a/MODE_BITMAP
          i32.eq
          br_if $case1|0
-         local.get $68
+         local.get $69
          global.get $assembly/f18a/MODE_MULTICOLOR
          i32.eq
          br_if $case2|0
-         local.get $68
+         local.get $69
          global.get $assembly/f18a/MODE_TEXT
          i32.eq
          br_if $case3|0
-         local.get $68
+         local.get $69
          global.get $assembly/f18a/MODE_TEXT_80
          i32.eq
          br_if $case4|0
@@ -3406,24 +3446,24 @@
         block $case1|1
          block $case0|1
           local.get $screenMode
-          local.set $75
-          local.get $75
+          local.set $76
+          local.get $76
           global.get $assembly/f18a/MODE_GRAPHICS
           i32.eq
           br_if $case0|1
-          local.get $75
+          local.get $76
           global.get $assembly/f18a/MODE_BITMAP
           i32.eq
           br_if $case1|1
-          local.get $75
+          local.get $76
           global.get $assembly/f18a/MODE_MULTICOLOR
           i32.eq
           br_if $case2|1
-          local.get $75
+          local.get $76
           global.get $assembly/f18a/MODE_TEXT
           i32.eq
           br_if $case3|1
-          local.get $75
+          local.get $76
           global.get $assembly/f18a/MODE_TEXT_80
           i32.eq
           br_if $case4|1
@@ -3814,12 +3854,19 @@
        i32.gt_s
        if
         local.get $spriteColor
+        i32.const -1
+        i32.eq
+        if
+         i32.const 0
+         local.set $spriteColor
+        end
+        local.get $spriteColor
         local.set $color
         block $assembly/f18a/getSpritePaletteBaseIndexBuffer|inlined.1 (result i32)
          local.get $x
-         local.set $offset|97
+         local.set $offset|98
          global.get $assembly/f18a/spritePaletteBaseIndexBufferAddr
-         local.get $offset|97
+         local.get $offset|98
          i32.const 2
          i32.shl
          i32.add
@@ -3845,16 +3892,16 @@
      end
      local.set $rgbColor
      local.get $pixelOffset
-     local.tee $100
+     local.tee $101
      i32.const 1
      i32.add
      local.set $pixelOffset
-     local.get $100
-     local.set $pixelOffset|101
+     local.get $101
+     local.set $pixelOffset|102
      local.get $rgbColor
      local.set $value
      global.get $assembly/f18a/imageDataAddr
-     local.get $pixelOffset|101
+     local.get $pixelOffset|102
      i32.const 2
      i32.shl
      i32.add
@@ -3870,43 +3917,43 @@
   else
    block $assembly/f18a/getColor|inlined.1 (result i32)
     local.get $bgColor
-    local.set $i|103
+    local.set $i|104
     global.get $assembly/f18a/paletteAddr
-    local.get $i|103
+    local.get $i|104
     i32.const 2
     i32.shl
     i32.add
     i32.load
     br $assembly/f18a/getColor|inlined.1
    end
-   local.set $rgbColor|104
+   local.set $rgbColor|105
    i32.const 0
-   local.set $xc|105
+   local.set $xc|106
    loop $for-loop|3
-    local.get $xc|105
+    local.get $xc|106
     local.get $width
     i32.lt_s
     if
      local.get $pixelOffset
-     local.tee $106
+     local.tee $107
      i32.const 1
      i32.add
      local.set $pixelOffset
-     local.get $106
-     local.set $pixelOffset|107
-     local.get $rgbColor|104
-     local.set $value|108
+     local.get $107
+     local.set $pixelOffset|108
+     local.get $rgbColor|105
+     local.set $value|109
      global.get $assembly/f18a/imageDataAddr
-     local.get $pixelOffset|107
+     local.get $pixelOffset|108
      i32.const 2
      i32.shl
      i32.add
-     local.get $value|108
+     local.get $value|109
      i32.store
-     local.get $xc|105
+     local.get $xc|106
      i32.const 1
      i32.add
-     local.set $xc|105
+     local.set $xc|106
      br $for-loop|3
     end
    end
@@ -3927,27 +3974,27 @@
    i32.sub
    local.set $pixelOffset2
    i32.const 0
-   local.set $xc|110
+   local.set $xc|111
    loop $for-loop|4
-    local.get $xc|110
+    local.get $xc|111
     local.get $width
     i32.lt_s
     if
      block $assembly/f18a/getImageData|inlined.0 (result i32)
       local.get $pixelOffset2
-      local.set $pixelOffset|111
+      local.set $pixelOffset|112
       global.get $assembly/f18a/imageDataAddr
-      local.get $pixelOffset|111
+      local.get $pixelOffset|112
       i32.const 2
       i32.shl
       i32.add
       i32.load
       br $assembly/f18a/getImageData|inlined.0
      end
-     local.set $rgbColor|112
+     local.set $rgbColor|113
      i32.const -16777216
      block $assembly/f18a/dim|inlined.0 (result i32)
-      local.get $rgbColor|112
+      local.get $rgbColor|113
       i32.const 16
       i32.shr_u
       i32.const 255
@@ -3966,26 +4013,9 @@
      i32.shl
      i32.or
      block $assembly/f18a/dim|inlined.1 (result i32)
-      local.get $rgbColor|112
+      local.get $rgbColor|113
       i32.const 8
       i32.shr_u
-      i32.const 255
-      i32.and
-      local.set $colorComponent|114
-      local.get $colorComponent|114
-      i32.const 1
-      i32.shr_u
-      local.get $colorComponent|114
-      i32.const 2
-      i32.shr_u
-      i32.add
-      br $assembly/f18a/dim|inlined.1
-     end
-     i32.const 8
-     i32.shl
-     i32.or
-     block $assembly/f18a/dim|inlined.2 (result i32)
-      local.get $rgbColor|112
       i32.const 255
       i32.and
       local.set $colorComponent|115
@@ -3996,30 +4026,47 @@
       i32.const 2
       i32.shr_u
       i32.add
+      br $assembly/f18a/dim|inlined.1
+     end
+     i32.const 8
+     i32.shl
+     i32.or
+     block $assembly/f18a/dim|inlined.2 (result i32)
+      local.get $rgbColor|113
+      i32.const 255
+      i32.and
+      local.set $colorComponent|116
+      local.get $colorComponent|116
+      i32.const 1
+      i32.shr_u
+      local.get $colorComponent|116
+      i32.const 2
+      i32.shr_u
+      i32.add
       br $assembly/f18a/dim|inlined.2
      end
      i32.or
      local.set $dimmedRgbColor
      local.get $pixelOffset2
-     local.tee $117
+     local.tee $118
      i32.const 1
      i32.add
      local.set $pixelOffset2
-     local.get $117
-     local.set $pixelOffset|118
+     local.get $118
+     local.set $pixelOffset|119
      local.get $dimmedRgbColor
-     local.set $value|119
+     local.set $value|120
      global.get $assembly/f18a/imageDataAddr
-     local.get $pixelOffset|118
+     local.get $pixelOffset|119
      i32.const 2
      i32.shl
      i32.add
-     local.get $value|119
+     local.get $value|120
      i32.store
-     local.get $xc|110
+     local.get $xc|111
      i32.const 1
      i32.add
-     local.set $xc|110
+     local.set $xc|111
      br $for-loop|4
     end
    end
@@ -4027,22 +4074,22 @@
   local.get $doublePixelsV
   if
    local.get $pixelOffset
-   local.set $pixelOffset|120
+   local.set $pixelOffset|121
    local.get $width
-   local.set $width|121
+   local.set $width|122
    global.get $assembly/f18a/imageDataAddr
-   local.get $pixelOffset|120
+   local.get $pixelOffset|121
    i32.const 2
    i32.shl
    i32.add
    global.get $assembly/f18a/imageDataAddr
-   local.get $pixelOffset|120
-   local.get $width|121
+   local.get $pixelOffset|121
+   local.get $width|122
    i32.sub
    i32.const 2
    i32.shl
    i32.add
-   local.get $width|121
+   local.get $width|122
    i32.const 2
    i32.shl
    memory.copy
