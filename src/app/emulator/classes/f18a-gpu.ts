@@ -220,7 +220,7 @@ export class F18AGPU extends CPUCommon implements CPU {
                     const diff = dir * (stride - width);
                     const copy = (vdpRAM[0x8007] & 0x01) === 0;
                     const srcByte = vdpRAM[src];
-                    this.log.debug("DMA triggered src=" + Util.toHexWord(src) + " dst=" + Util.toHexWord(dst) + " width=" + Util.toHexByte(width) +
+                    this.log.info("DMA triggered src=" + Util.toHexWord(src) + " dst=" + Util.toHexWord(dst) + " width=" + Util.toHexByte(width) +
                         " height=" + Util.toHexByte(height) + " stride=" + stride + " copy=" + copy + " dir=" + dir + " srcByte=" + srcByte);
                     let x, y;
                     if (copy) {
