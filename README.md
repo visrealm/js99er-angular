@@ -6,9 +6,20 @@ This project was originally generated with [Angular CLI](https://github.com/angu
 
 ## visrealm version
 
-This version has been modified to add support for the [PICO9918](https://github.com/visrealm/pico9918). 
+This version has been modified to add support for the [PICO9918](https://github.com/visrealm/pico9918).
 
 Although mostly compatible with the F18A, the PICO9918 has additional VRAM available to the GPU and is able to save and load game data. The version ID for the PICO9918 detection is also different but compatible with the F18A.
+
+PICO9918-specific features supported:
+* PICO9918 ident (SR1 returns 0xE8)
+* Full 64KB GPU memory map supported (no repeated sections, no holes)
+* LOAD/SAVE API for persistent data storage to flash (register 0x3F)
+* 48/60 row text/tile modes (bit 0x04 in register 0 to enable)
+* Opaque sprite flag support (reuse SIZE flag (0x10) in sprite attribute when global 16px enabled)
+* Optional palette reset on VDP register reset (0x40 set when setting 0x80 in register 0x32)
+
+Additional features:
+* Multi-page name table views
 
 Live version is served here: [https://js99er.visrealm.au](https://js99er.visrealm.au/)
 
