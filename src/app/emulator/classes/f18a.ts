@@ -877,6 +877,9 @@ export class F18A implements VDP {
                     this.psg.setGROMClock(gromClock);
                 }
                 break;
+            case 0x3F:
+                // Flash operation register (PICO9918 only) - suppress default log
+                break;
             default:
                 this.log.info("Write " + Util.toHexByte(this.registers[reg]) + " to F18A register " + reg + " (" + Util.toHexByte(reg) + ").");
                 break;
