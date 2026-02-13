@@ -8,22 +8,39 @@ export class PICO9918GPU extends F18AGPU {
     }
 
     override writeMemoryByte(addr: number, b: number) {
-        const bank = addr & 0xF000;
-        if (bank === 0x9000 || bank === 0xC000 || bank === 0xD000 || bank === 0xE000) {
-            // PICO9918: previously-unused ranges now access full 64K VRAM
-            this.vdpRAM[addr] = b;
-        } else {
-            super.writeMemoryByte(addr, b);
-        }
+        this.vdpRAM[addr] = b;
+        switch (addr & 0xF000) {
+            // PRAM
+            case 0x5000:
+                if (addr < 0x5080) super.writeMemoryByte(addr, b);
+                break;
+            // VREG
+            case 0x6000:
+                if (addr < 0x6040) super.writeMemoryByte(addr, b);
+                break;
+            // DMA
+            case 0x8000:
+                if (addr <= 0x8008) super.writeMemoryByte(addr, b);
+                break;
+        }        
+        
     }
 
     override readMemoryByte(addr: number): number {
-        const bank = addr & 0xF000;
-        if (bank === 0x9000 || bank === 0xC000 || bank === 0xD000 || bank === 0xE000) {
-            // PICO9918: previously-unused ranges now access full 64K VRAM
-            return this.vdpRAM[addr];
-        } else {
-            return super.readMemoryByte(addr);
+        switch (addr & 0xF000) {
+            // PRAM
+            case 0x5000:
+                if (addr < 0x5080) return super.readMemoryByte(addr);
+                break;
+            // VREG
+            case 0x6000:
+                if (addr < 0x6040) return super.readMemoryByte(addr);
+                break;
+            // Scanline and blanking
+            case 0x7000:
+                if (addr < 0x7002) return super.readMemoryByte(addr);
+                break;
         }
+        return this.vdpRAM[addr];
     }
 }
