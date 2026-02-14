@@ -90,6 +90,26 @@ export class PICO9918 extends F18A {
         return (this.registers[0] & 0x08) === 0;
     }
 
+    protected isExtendedRowMode(): boolean {
+        // Extended row mode when bit 3 = 1 (not doubled)
+        return !this.isDoubledV();
+    }
+
+    protected override getBaseRows(): number {
+        if (this.isExtendedRowMode()) {
+            // Extended mode: 48 rows (normal) or 60 rows (ROW30)
+            return this.row30Enabled ? 60 : 48;
+        }
+        // Standard F18A mode: 24 or 30 rows
+        return this.row30Enabled ? 30 : 24;
+    }
+
+    override getScanlineCount(): number {
+        // Extended mode needs 480 scanlines (no vertical doubling)
+        // Standard mode needs 240 scanlines (with vertical doubling)
+        return this.isExtendedRowMode() ? 480 : 240;
+    }
+
     protected override drawSplash() {
         if (!this.splashImage) {
             return;

@@ -7,6 +7,7 @@ export interface VDP extends Stateful, MemoryDevice {
     getType(): VDPType;
     reset(): void;
     initFrame(): void;
+    getScanlineCount(): number;
     drawScanline(y: number): void;
     drawInvisibleScanline(y: number): void;
     updateCanvas(): void;

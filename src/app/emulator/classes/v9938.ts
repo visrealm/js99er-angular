@@ -740,6 +740,10 @@ export class V9938 implements VDP {
         this.scanline = 0;
     }
 
+    getScanlineCount(): number {
+        return 240;
+    }
+
     drawScanline(y: number): void {
         this.timer_callback_member(y);
     }

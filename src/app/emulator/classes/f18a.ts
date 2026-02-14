@@ -155,7 +155,7 @@ export class F18A implements VDP {
     private nameTable2: number;
     private tileLayer1Enabled: boolean;
     private tileLayer2Enabled: boolean;
-    private row30Enabled: boolean;
+    protected row30Enabled: boolean;
     private spriteLinkingEnabled: boolean;
     private hScroll1: number;
     private vScroll1: number;
@@ -425,7 +425,8 @@ export class F18A implements VDP {
             this.canvasHeight = this.canvas.height = newCanvasHeight;
         }
         this.drawWidth = this.screenMode === F18A.MODE_TEXT_80 ? 512 : 256;
-        this.drawHeight = this.row30Enabled ? 240 : 192;
+        const baseRows = this.getBaseRows();
+        this.drawHeight = baseRows * 8;
         this.leftBorder = Math.floor((this.canvasWidth - (this.drawWidth << (this.isDoubledH() ? 1 : 0))) >> 1);
         this.topBorder = Math.floor(((this.canvasHeight >> (this.isDoubledV() ? 1 : 0)) - this.drawHeight) >> 1);
         if (newDimensions) {
@@ -440,6 +441,10 @@ export class F18A implements VDP {
     }
 
     initFrame() {
+    }
+
+    getScanlineCount(): number {
+        return 240;
     }
 
     drawScanline(y: number) {
@@ -1183,6 +1188,11 @@ export class F18A implements VDP {
         return this.screenMode === F18A.MODE_TEXT_80;
     }
 
+    protected getBaseRows(): number {
+        // F18A standard: 24 or 30 rows
+        return this.row30Enabled ? 30 : 24;
+    }
+
     protected createGPU(): F18AGPU {
         return new F18AGPU(this);
     }
@@ -1353,7 +1363,7 @@ export class F18A implements VDP {
         const isLayer2 = layer === 2;
         const hPages = isLayer2 ? (reg29 & 0x20) !== 0 : (reg29 & 0x02) !== 0;
         const vPages = isLayer2 ? (reg29 & 0x10) !== 0 : (reg29 & 0x01) !== 0;
-        const baseRows = this.row30Enabled ? 30 : 24;
+        const baseRows = this.getBaseRows();
         const cols = hPages ? 64 : 32;
 
         const rows = baseRows * (vPages ? 2 : 1);
@@ -1483,7 +1493,7 @@ export class F18A implements VDP {
         canvasContext.putImageData(imageData, 0, 0);
         // Draw viewport rectangle showing the active display area
         const viewportWidth = this.screenMode === F18A.MODE_TEXT_80 ? 512 : 256;
-        const viewportHeight = this.row30Enabled ? 240 : 192;
+        const viewportHeight = this.drawHeight;
         // Determine primary page offset from unmasked name table address
         const unmaskedNameTable = isLayer2 ? (this.registers[10] & 0x0f) << 10 : this.nameTable;
         const pageFlags = unmaskedNameTable & mask;

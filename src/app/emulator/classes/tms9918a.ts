@@ -145,6 +145,10 @@ export class TMS9918A implements VDP {
     initFrame() {
     }
 
+    getScanlineCount(): number {
+        return 240;
+    }
+
     drawScanline(y: number) {
         this.statusRegister = this.wasmService.getExports().drawScanline9918a(
             y,
