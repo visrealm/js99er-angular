@@ -3,6 +3,7 @@ import {F18AGPU} from './f18a-gpu';
 import {PICO9918GPU} from './pico9918-gpu';
 import {PICO9918Flash} from './pico9918-flash';
 import {PICO9918Config} from './pico9918-config';
+import {PICO9918Diagnostics} from './pico9918-diagnostics';
 import {TI994A} from './ti994a';
 import {WasmService} from '../../services/wasm.service';
 import {Log} from '../../classes/log';
@@ -12,6 +13,7 @@ export class PICO9918 extends F18A {
 
     private flash: PICO9918Flash | null = null;
     private config: PICO9918Config | null = null;
+    private diagnostics: PICO9918Diagnostics | null = null;
 
     constructor(canvas: HTMLCanvasElement, console: TI994A, wasmService: WasmService) {
         super(canvas, console, wasmService, false);
@@ -209,6 +211,26 @@ export class PICO9918 extends F18A {
         this.canvasContext.drawImage(this.splashImage, x, y, this.splashImage.width, drawH);
     }
 
+    override updateCanvas() {
+        // Call parent to render VDP output and splash
+        super.updateCanvas();
+
+        // Render diagnostic overlays on top
+        if (this.diagnostics && this.config) {
+            this.diagnostics.update(this.frameCounter);
+            this.diagnostics.render(
+                this.canvasContext,
+                this.config,
+                this.registers,
+                this.isUnlocked(),
+                this.getPalette(),
+                this.canvasWidth,
+                this.canvasHeight,
+                this.isDoubledV()
+            );
+        }
+    }
+
     override reset() {
         super.reset();
 
@@ -222,6 +244,11 @@ export class PICO9918 extends F18A {
 
         // Apply initial config
         this.applyConfig();
+
+        // Initialize diagnostics
+        if (!this.diagnostics) {
+            this.diagnostics = new PICO9918Diagnostics();
+        }
 
         // Initialize flash storage (similar to F18AGPU pattern)
         if (!this.flash) {
