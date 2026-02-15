@@ -1160,6 +1160,10 @@ export class F18A implements VDP {
         return this.registers[n];
     }
 
+    isUnlocked(): boolean {
+        return this.unlocked;
+    }
+
     getBitmapWidth(): number {
         return this.bitmapWidth;
     }

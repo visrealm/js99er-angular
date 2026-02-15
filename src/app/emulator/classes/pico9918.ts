@@ -2,6 +2,8 @@ import {F18A} from './f18a';
 import {F18AGPU} from './f18a-gpu';
 import {PICO9918GPU} from './pico9918-gpu';
 import {PICO9918Flash} from './pico9918-flash';
+import {PICO9918Config} from './pico9918-config';
+import {PICO9918Diagnostics} from './pico9918-diagnostics';
 import {TI994A} from './ti994a';
 import {WasmService} from '../../services/wasm.service';
 import {Log} from '../../classes/log';
@@ -10,6 +12,8 @@ import {VDPType} from '../../classes/settings';
 export class PICO9918 extends F18A {
 
     private flash: PICO9918Flash | null = null;
+    private config: PICO9918Config | null = null;
+    private diagnostics: PICO9918Diagnostics | null = null;
 
     constructor(canvas: HTMLCanvasElement, console: TI994A, wasmService: WasmService) {
         super(canvas, console, wasmService, false);
@@ -58,6 +62,23 @@ export class PICO9918 extends F18A {
             }
             break;
 
+          case 58:  // VR58: Config option read - update SR12
+            // SR12 will return config[VR58] on next readStatus()
+            // Handled in readStatus() case 12
+            break;
+
+          case 59:  // VR59: Config option write
+            if (this.config && this.registers[58] >= 8) {
+                const configIndex = this.registers[58];
+                this.config.setValue(configIndex, value);
+                // Apply config changes immediately if needed
+                if (this.config.isConfigDirty()) {
+                    this.applyConfig();
+                    this.config.clearConfigDirty();
+                }
+            }
+            break;
+
           case 0x3F:  // Flash operation (register 63)
             const isFirmware = (value & 0x40) !== 0;
             // Only handle data mode (not firmware updates)
@@ -66,6 +87,20 @@ export class PICO9918 extends F18A {
             }
             break;
         }
+    }
+
+    override readStatus(): number {
+        // VR15 controls which status register is selected
+        const statusRegNo = this.registers[15];
+
+        // Handle SR12 for config
+        if (statusRegNo === 12 && this.config) {
+            const configIndex = this.registers[58];
+            return this.config.getValue(configIndex);
+        }
+
+        // Fall back to parent implementation
+        return super.readStatus();
     }
 
     private handleFlashOperation(flashReg: number) {
@@ -84,6 +119,42 @@ export class PICO9918 extends F18A {
                 this.getRAM()[0xB000] = this.flash.getStatusByte();
             }
         });
+    }
+
+    private applyConfig(): void {
+        if (!this.config) {
+            return;
+        }
+
+        // Apply CRT scanlines to rendering (would need renderer support)
+        // const scanlines = this.config.getValue(PICO9918Config.CONF_CRT_SCANLINES);
+        // Note: Scanline rendering not currently implemented in js99er
+
+        // Apply scanline sprite setting to VR30
+        const scanlineSprites = this.config.getValue(PICO9918Config.CONF_SCANLINE_SPRITES);
+        this.registers[30] = 1 << (scanlineSprites + 2);
+
+        // Apply default palette from config
+        for (let i = 0; i < 16; i++) {
+            const paletteOffset = PICO9918Config.CONF_PALETTE_IDX_0 + (i * 2);
+            const rgb = (this.config.getValue(paletteOffset) << 8) |
+                        this.config.getValue(paletteOffset + 1);
+            // Convert from big-endian RGB444 to palette format
+            // Format: 0xf000 | 0x0RGB (4 bits per channel)
+            const r = (rgb & 0x0f00) >> 8;
+            const g = (rgb & 0x00f0) >> 4;
+            const b = (rgb & 0x000f);
+            // Scale 0-15 to 0-255 and update palette
+            this.setPaletteEntry(i, r * 17, g * 17, b * 17);
+        }
+
+        // Update diagnostic flag
+        const diagRegs = this.config.getValue(PICO9918Config.CONF_DIAG_REGISTERS);
+        const diagPerf = this.config.getValue(PICO9918Config.CONF_DIAG_PERFORMANCE);
+        const diagPal = this.config.getValue(PICO9918Config.CONF_DIAG_PALETTE);
+        const diagAddr = this.config.getValue(PICO9918Config.CONF_DIAG_ADDRESS);
+        const diagEnabled = diagRegs || diagPerf || diagPal || diagAddr;
+        this.config.setValue(PICO9918Config.CONF_DIAG, diagEnabled ? 1 : 0);
     }
 
     protected override isDoubledV(): boolean {
@@ -140,8 +211,44 @@ export class PICO9918 extends F18A {
         this.canvasContext.drawImage(this.splashImage, x, y, this.splashImage.width, drawH);
     }
 
+    override updateCanvas() {
+        // Call parent to render VDP output and splash
+        super.updateCanvas();
+
+        // Render diagnostic overlays on top
+        if (this.diagnostics && this.config) {
+            this.diagnostics.update(this.frameCounter);
+            this.diagnostics.render(
+                this.canvasContext,
+                this.config,
+                this.registers,
+                this.isUnlocked(),
+                this.getPalette(),
+                this.canvasWidth,
+                this.canvasHeight,
+                this.isDoubledV()
+            );
+        }
+    }
+
     override reset() {
         super.reset();
+
+        // Initialize config storage
+        if (!this.config) {
+            this.config = new PICO9918Config();
+            this.config.readConfig();
+        } else {
+            this.config.readConfig();
+        }
+
+        // Apply initial config
+        this.applyConfig();
+
+        // Initialize diagnostics
+        if (!this.diagnostics) {
+            this.diagnostics = new PICO9918Diagnostics();
+        }
 
         // Initialize flash storage (similar to F18AGPU pattern)
         if (!this.flash) {
@@ -158,6 +265,7 @@ export class PICO9918 extends F18A {
     override getState(): any {
         const state = super.getState();
         state.flash = this.flash ? this.flash.getState() : null;
+        state.config = this.config ? this.config.getState() : null;
         return state;
     }
 
@@ -165,6 +273,9 @@ export class PICO9918 extends F18A {
         super.restoreState(state);
         if (state && state.flash && this.flash) {
             this.flash.restoreState(state.flash);
+        }
+        if (state && state.config && this.config) {
+            this.config.restoreState(state.config);
         }
     }
 }
