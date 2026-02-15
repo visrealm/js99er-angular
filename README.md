@@ -17,6 +17,8 @@ PICO9918-specific features supported:
 * 48/60 row text/tile modes (bit 0x04 in register 0 to enable)
 * Opaque sprite flag support (reuse SIZE flag (0x10) in sprite attribute when global 16px enabled)
 * Optional palette reset on VDP register reset (0x40 set when setting 0x80 in register 0x32)
+* Configuration data read and write (option index at VR58(0x3A), option value write to VR59(0x3B) or read from SR12(0x0C))
+* Diagnostics overlays and custom palette can be enabled using the PICO9918 configurator
 
 Additional features:
 * Multi-page name table views
