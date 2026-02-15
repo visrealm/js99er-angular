@@ -242,6 +242,12 @@ export class PICO9918 extends F18A {
             this.config.readConfig();
         }
 
+        // In emulator, automatically confirm the clock preset on reset
+        if (this.config) {
+            const clockPreset = this.config.getValue(PICO9918Config.CONF_CLOCK_PRESET_ID);
+            this.config.setValue(PICO9918Config.CONF_CLOCK_TESTED, clockPreset);
+        }
+
         // Apply initial config
         this.applyConfig();
 

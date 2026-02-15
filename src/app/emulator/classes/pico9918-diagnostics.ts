@@ -123,9 +123,23 @@ export class PICO9918Diagnostics {
 
         // Performance diagnostics
         if (config.getValue(PICO9918Config.CONF_DIAG_PERFORMANCE)) {
-            this.renderLeftPanel(pixels, canvasWidth, canvasHeight, leftRow++, 'HWVER : ', 'V1.0+', '', isDoubledV);
-            this.renderLeftPanel(pixels, canvasWidth, canvasHeight, leftRow++, 'FWVER : ', 'v1.0.3', '', isDoubledV);
-            this.renderLeftPanel(pixels, canvasWidth, canvasHeight, leftRow++, 'CLOCK : ', '252.0', 'MHZ', isDoubledV);
+            // Format hardware version from config
+            const hwVersion = config.getValue(PICO9918Config.CONF_HW_VERSION);
+            const hwVerStr = `V${(hwVersion >> 4) & 0xF}.${hwVersion & 0xF}+`;
+
+            // Format firmware version from config (SW_VERSION is 0xMm format, PATCH_VERSION is separate)
+            const swVersion = config.getValue(PICO9918Config.CONF_SW_VERSION);
+            const patchVersion = config.getValue(PICO9918Config.CONF_SW_PATCH_VERSION);
+            const fwVerStr = `V${(swVersion >> 4) & 0xF}.${swVersion & 0xF}.${patchVersion}`;
+
+            // Get clock speed from tested/confirmed preset (0=252.0, 1=302.4, 2=352.0 MHz)
+            const clockTested = config.getValue(PICO9918Config.CONF_CLOCK_TESTED);
+            const clockSpeeds = ['252.0', '302.4', '352.0'];
+            const clockStr = clockSpeeds[clockTested] || '252.0';
+
+            this.renderLeftPanel(pixels, canvasWidth, canvasHeight, leftRow++, 'HWVER : ', hwVerStr, '', isDoubledV);
+            this.renderLeftPanel(pixels, canvasWidth, canvasHeight, leftRow++, 'FWVER : ', fwVerStr, '', isDoubledV);
+            this.renderLeftPanel(pixels, canvasWidth, canvasHeight, leftRow++, 'CLOCK : ', clockStr, 'MHZ', isDoubledV);
             this.renderLeftPanel(pixels, canvasWidth, canvasHeight, leftRow++, 'FRAME : ', this.currentFrameTime, 'MS', isDoubledV);
             this.renderLeftPanel(pixels, canvasWidth, canvasHeight, leftRow++, 'FPS   : ', this.currentFPS, 'FPS', isDoubledV);
             this.renderLeftPanel(pixels, canvasWidth, canvasHeight, leftRow++, 'GPU   : ', '0.00', '%', isDoubledV);
