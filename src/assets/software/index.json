@@ -295,6 +295,22 @@
                     "url": "software/crazy-climber.rpk"
                 }
             ]
+        },
+        {
+            "type": "SUBMENU",
+            "name": "visrealm",
+            "items": [
+                {
+                    "type": "ITEM",
+                    "name": "PICO9918 Configurator",
+                    "url": "software/pico9918conf-8.bin"
+                },
+                {
+                    "type": "ITEM",
+                    "name": "RetroPipe",
+                    "url": "software/retropipe-8.bin"
+                }
+            ]
         },        {
             "type": "DIVIDER"
         },
@@ -656,22 +672,6 @@
                     "type": "ITEM",
                     "name": "Graphics demo",
                     "url": "software/gdemo8.bin"
-                }
-            ]
-        },
-        {
-            "type": "SUBMENU",
-            "name": "VISREALM",
-            "items": [
-                {
-                    "type": "ITEM",
-                    "name": "PICO9918 Configurator",
-                    "url": "software/pico9918conf-8.bin"
-                },
-                {
-                    "type": "ITEM",
-                    "name": "RetroPipe",
-                    "url": "software/retropipe-8.bin"
                 }
             ]
         },
