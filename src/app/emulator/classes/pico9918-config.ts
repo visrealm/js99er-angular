@@ -65,7 +65,12 @@ export class PICO9918Config {
 
                 // Validate stored config
                 if (this.isValidConfig(bytes)) {
-                    this.config.set(bytes);
+                    // Initialize defaults first (for hardware/firmware values)
+                    this.initializeDefaults();
+                    // Only restore user-configurable values (index >= 8)
+                    for (let i = 8; i < bytes.length; i++) {
+                        this.config[i] = bytes[i];
+                    }
                     this.log.info("PICO9918 config loaded from localStorage");
                     return;
                 }
@@ -116,8 +121,8 @@ export class PICO9918Config {
         // Set read-only values
         this.config[PICO9918Config.CONF_PICO_MODEL] = 2;      // RP2350
         this.config[PICO9918Config.CONF_HW_VERSION] = 0x10;   // v1.x
-        this.config[PICO9918Config.CONF_SW_VERSION] = 0x10;   // v1.0
-        this.config[PICO9918Config.CONF_SW_PATCH_VERSION] = 3; // v1.0.3
+        this.config[PICO9918Config.CONF_SW_VERSION] = 0x11;   // v1.1
+        this.config[PICO9918Config.CONF_SW_PATCH_VERSION] = 0; // v1.1.0
         this.config[PICO9918Config.CONF_DISP_DRIVER] = 0;     // VGA
 
         // Set default user settings
@@ -196,7 +201,12 @@ export class PICO9918Config {
 
     restoreState(state: any): void {
         if (state.config) {
-            this.config.set(new Uint8Array(state.config));
+            const stateConfig = new Uint8Array(state.config);
+            // Only restore user-configurable values (index >= 8)
+            // Hardware/firmware values (0-7) should not be restored
+            for (let i = 8; i < stateConfig.length; i++) {
+                this.config[i] = stateConfig[i];
+            }
         }
         this.configDirty = state.configDirty || false;
     }
