@@ -54,6 +54,9 @@ export class Software {
     }
 
     parseData(data: any) {
+        if (data.name) {
+            this.name = data.name;
+        }
         this.inverted = !!data.inverted;
         this.cruBankSwitched = !!data.cruBankSwitched;
         if (data.startAddress) {

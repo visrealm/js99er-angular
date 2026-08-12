@@ -41,10 +41,13 @@ export class SoftwareMenuComponent implements OnInit {
         );
     }
 
-    openSoftware(url: string, diskUrl?: string) {
+    openSoftware(url: string, diskUrl?: string, name?: string) {
         if (url) {
             this.moduleService.loadModuleFromURL(url).subscribe({
                 next: (software: Software) => {
+                    if (name) {
+                        software.name = name;
+                    }
                     this.commandDispatcherService.loadSoftware(software);
                 },
                 error: (error) => {
@@ -77,7 +80,7 @@ export class SoftwareMenuComponent implements OnInit {
                 dialogRef.afterClosed().subscribe(result => {
                     this.commandDispatcherService.startKeyboard();
                     if (result instanceof Software) {
-                        this.openSoftware(result.url);
+                        this.openSoftware(result.url, undefined, result.name);
                     }
                 });
             },

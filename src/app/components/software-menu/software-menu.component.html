@@ -3,7 +3,7 @@
   <ng-template matMenuContent let-items="items">
     @for (item of items; track item) {
       @if (item.type==='ITEM') {
-        <button mat-menu-item (click)="openSoftware(item.url, item.diskUrl)">{{item.name}}</button>
+        <button mat-menu-item (click)="openSoftware(item.url, item.diskUrl, item.name)">{{item.name}}</button>
       }
       @if (item.type==='DIVIDER') {
         <mat-divider></mat-divider>
@@ -14,7 +14,7 @@
           <ng-template matMenuContent let-items="items">
             @for (item of items; track item) {
               @if (item.type==='ITEM') {
-                <button mat-menu-item (click)="openSoftware(item.url, item.diskUrl)">{{item.name}}</button>
+                <button mat-menu-item (click)="openSoftware(item.url, item.diskUrl, item.name)">{{item.name}}</button>
               }
               @if (item.type==='DIVIDER') {
                 <mat-divider></mat-divider>

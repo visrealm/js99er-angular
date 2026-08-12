@@ -5,6 +5,7 @@ import {ConsoleEvent, ConsoleEventType} from "../../classes/console-event";
 import {EventDispatcherService} from "../../services/event-dispatcher.service";
 import {saveAs} from 'file-saver';
 import { faDownload } from '@fortawesome/free-solid-svg-icons';
+import {F18A} from "../../emulator/classes/f18a";
 
 @Component({
     selector: 'graphics',
@@ -36,6 +37,7 @@ export class GraphicsComponent implements OnInit, AfterViewInit, OnChanges {
     bitmapMode = false;
     multiplePages = false;
     hasT2Layer = false;
+    isF18A = false;
     dumpRAMIcon = faDownload;
 
     constructor(
@@ -126,6 +128,7 @@ export class GraphicsComponent implements OnInit, AfterViewInit, OnChanges {
             this.bitmapMode = vdp.isBitmapMode();
             this.multiplePages = vdp.hasMultiplePages();
             this.hasT2Layer = vdp.hasTileLayer2();
+            this.isF18A = vdp instanceof F18A;
             vdp.drawPaletteImage(this.paletteCanvas);
             if (this.tileCanvasTopVisible) {
                 vdp.drawTilePatternImage(this.tileCanvasTop, 0, true);
@@ -165,6 +168,39 @@ export class GraphicsComponent implements OnInit, AfterViewInit, OnChanges {
             output[0x4000 + r] = vdp.getRegister(r);
         }
         const blob = new Blob([output], { type: "application/octet-stream" });
-        saveAs(blob, "vdpram.bin");
+        saveAs(blob, this.dumpFileName("vdpram"));
+    }
+
+    // As dumpRAM, but with all 64 VDP registers and the 64 palette registers appended:
+    // 0x0000-0x3fff: VDP RAM, 0x4000-0x403f: VR0-VR63, 0x4040-0x40bf: palette as 2 bytes per
+    // entry in native F18A format (0x0R, 0xGB)
+    dumpRAMFull() {
+        const vdp = this.ti994A.getVDP();
+        if (!(vdp instanceof F18A)) {
+            return;
+        }
+        const output = new Uint8Array(0x40c0);
+        const vdpRAM = vdp.getRAM();
+        for (let i = 0; i < 0x4000; i++) {
+            output[i] = vdpRAM[i];
+        }
+        for (let r = 0; r < 64; r++) {
+            output[0x4000 + r] = vdp.getRegister(r);
+        }
+        const palette = vdp.getPalette();
+        for (let i = 0; i < 64; i++) {
+            const paletteEntry = palette[i];
+            output[0x4040 + (i << 1)] = Math.floor(paletteEntry[0] / 17);
+            output[0x4041 + (i << 1)] = (Math.floor(paletteEntry[1] / 17) << 4) | Math.floor(paletteEntry[2] / 17);
+        }
+        const blob = new Blob([output], { type: "application/octet-stream" });
+        saveAs(blob, this.dumpFileName("vdpramfull"));
+    }
+
+    // Prefix the dump with the name of the loaded software, e.g. "Parsec_vdpram.bin"
+    private dumpFileName(suffix: string): string {
+        const softwareName = this.ti994A.getSoftwareName();
+        const baseName = softwareName ? softwareName.replace(/[^\w.-]+/g, "_").replace(/^_+|_+$/g, "") : "";
+        return (baseName ? baseName + "_" : "") + suffix + ".bin";
     }
 }

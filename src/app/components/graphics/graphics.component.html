@@ -78,5 +78,7 @@
     </div>
     <mat-toolbar class="toolbar">
         <button mat-raised-button color="primary" (click)="dumpRAM()"><fa-icon [icon]="dumpRAMIcon"></fa-icon> Dump VDP RAM</button>
+        <span class="margin-right"></span>
+        <button *ngIf="isF18A" mat-raised-button color="primary" (click)="dumpRAMFull()"><fa-icon [icon]="dumpRAMIcon"></fa-icon> Dump VDP RAM + regs</button>
     </mat-toolbar>
 </div>

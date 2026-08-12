@@ -5,6 +5,7 @@ import {Injectable} from '@angular/core';
 import {Observable} from 'rxjs';
 import {Subject} from 'rxjs';
 import {forkJoin} from "rxjs";
+import {map} from "rxjs/operators";
 import {BlobReader, BlobWriter, Entry, HttpReader, Reader, TextWriter, URLString, ZipReader} from "@zip.js/zip.js";
 @Injectable()
 export class ModuleService {
@@ -57,7 +58,7 @@ export class ModuleService {
                     observables.push(this.loadBinModuleFromFile(file, true));
                 }
             }
-            return this.combineSoftwareIntoModule(observables);
+            return this.nameSoftware(this.combineSoftwareIntoModule(observables), this.getBaseFilename(files[0].name));
         }
     }
 
@@ -68,30 +69,40 @@ export class ModuleService {
             subject.error("File name extension '" + extension + "' not supported.");
             return subject.asObservable();
         }
-        if (extension === "bin") {
-            return this.loadBinModuleFromFile(file, false);
-        } else {
-            return this.loadRPKOrZipModuleFromFile(file);
-        }
+        const software = extension === "bin" ? this.loadBinModuleFromFile(file, false) : this.loadRPKOrZipModuleFromFile(file);
+        return this.nameSoftware(software, this.getBaseFilename(file.name));
     }
 
     loadModuleFromURL(url: string): Observable<Software> {
+        const name = this.getBaseFilename(url.split('?')[0].split('/').pop() || "");
         if (url.startsWith('http')) {
             url = 'proxy?url=' + url;
         } else {
             url = 'assets/' + url;
         }
         if (url.substring(url.length - 3).toLowerCase() === 'rpk') {
-            return this.loadRPKOrZipModuleFromURL(url);
+            return this.nameSoftware(this.loadRPKOrZipModuleFromURL(url), name);
         } else if (url.substring(url.length - 3).toLowerCase() === 'bin') {
-            return this.loadBinModuleFromURL(url);
+            return this.nameSoftware(this.loadBinModuleFromURL(url), name);
         } else if (url.substring(url.length - 4).toLowerCase() === 'json') {
-            return this.loadJSONModuleFromURL(url);
+            return this.nameSoftware(this.loadJSONModuleFromURL(url), name);
         } else {
             const subject = new Subject<Software>();
             subject.error("Invalid url: " + url);
             return subject.asObservable();
         }
+    }
+
+    // Falls back to the file name for software that doesn't provide a name of its own
+    private nameSoftware(software: Observable<Software>, name: string): Observable<Software> {
+        return software.pipe(
+            map((loaded: Software) => {
+                if (!loaded.name && name) {
+                    loaded.name = name;
+                }
+                return loaded;
+            })
+        );
     }
 
     loadRPKOrZipModuleFromFile(file: File): Observable<Software> {

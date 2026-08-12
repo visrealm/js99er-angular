@@ -65,6 +65,7 @@ export class TI994A implements Console, Stateful {
     private googleDrives: GoogleDrive[];
     private tipi: TIPI | null;
     private ramDisk: RAMDisk | null;
+    private softwareName: string | null = null;
 
     private running: boolean;
     private cpuSpeed: number;
@@ -485,6 +486,10 @@ export class TI994A implements Console, Stateful {
         return this.databaseService;
     }
 
+    getSoftwareName(): string | null {
+        return this.softwareName;
+    }
+
     isRunning() {
         return this.running;
     }
@@ -512,6 +517,7 @@ export class TI994A implements Console, Stateful {
         if (wasRunning) {
             this.stop();
         }
+        this.softwareName = software && software.name ? software.name : null;
         if (software) {
             if (software.memoryBlocks) {
                 this.reset(true);
@@ -560,7 +566,8 @@ export class TI994A implements Console, Stateful {
             speech: this.speech.getState(),
             tape: this.tape.getState(),
             fdc: this.fdc ? this.fdc.getState() : null,
-            ramDisk: this.ramDisk ? this.ramDisk.getState() : null
+            ramDisk: this.ramDisk ? this.ramDisk.getState() : null,
+            softwareName: this.softwareName
         };
     }
 
@@ -595,6 +602,7 @@ export class TI994A implements Console, Stateful {
         if (state.ramDisk && this.ramDisk) {
             this.ramDisk.restoreState(state.ramDisk);
         }
+        this.softwareName = state.softwareName || null;
     }
 
     destroy() {
