@@ -120,9 +120,9 @@ export class PICO9918Config {
 
         // Set read-only values
         this.config[PICO9918Config.CONF_PICO_MODEL] = 2;      // RP2350
-        this.config[PICO9918Config.CONF_HW_VERSION] = 0x10;   // v1.x
-        this.config[PICO9918Config.CONF_SW_VERSION] = 0x11;   // v1.1
-        this.config[PICO9918Config.CONF_SW_PATCH_VERSION] = 0; // v1.1.0
+        this.config[PICO9918Config.CONF_HW_VERSION] = 0x20;   // v2.0
+        this.config[PICO9918Config.CONF_SW_VERSION] = 0x12;   // v1.2
+        this.config[PICO9918Config.CONF_SW_PATCH_VERSION] = 0; // v1.2.0
         this.config[PICO9918Config.CONF_DISP_DRIVER] = 0;     // VGA
 
         // Set default user settings

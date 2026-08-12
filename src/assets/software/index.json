@@ -309,6 +309,11 @@
                     "type": "ITEM",
                     "name": "RetroPipe",
                     "url": "software/retropipe-8.bin"
+                },
+                {
+                    "type": "ITEM",
+                    "name": "RetroPlex",
+                    "url": "software/retroplex-8.bin"
                 }
             ]
         },        {

@@ -25,7 +25,7 @@ export class PICO9918 extends F18A {
     }
 
     protected override getSplashImagePath(): string {
-        return 'assets/images/pico9918_bitmap_v1.0.3.png';
+        return 'assets/images/pico9918_bitmap_v1.2.0.png';
     }
 
     protected override getStatusRegister1Id(): number {

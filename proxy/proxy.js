@@ -2,8 +2,9 @@ const http = require('http');
 const https = require('https');
 const url = require('url');
 const fs = require('fs');
+const path = require('path');
 
-const myConsole = new console.Console(fs.createWriteStream('./log.txt'));
+const myConsole = new console.Console(fs.createWriteStream(path.join(__dirname, 'log.txt')));
 
 function getFile(queryUrl, callback) {
     if (queryUrl.startsWith('https')) {
@@ -11,6 +12,17 @@ function getFile(queryUrl, callback) {
     } else {
         http.get(queryUrl, callback);
     }
+}
+
+function getFileFollowingRedirects(queryUrl, callback, maxRedirects = 5) {
+    getFile(queryUrl, (response) => {
+        if (response.headers.location && maxRedirects > 0) {
+            response.resume();
+            getFileFollowingRedirects(response.headers.location, callback, maxRedirects - 1);
+        } else {
+            callback(response);
+        }
+    });
 }
 
 function downloadFile(queryUrl, response, res)  {
@@ -27,14 +39,8 @@ const server = http.createServer((req, res) => {
     if (queryUrl) {
         myConsole.log("Downloading " + queryUrl + "\n");
         try {
-            getFile(queryUrl, (response) => {
-                if (response.headers.location) {
-                    getFile(response.headers.location, (response2) => {
-                        downloadFile(queryUrl, response2, res);
-                    })
-                } else {
-                    downloadFile(queryUrl, response, res);
-                }
+            getFileFollowingRedirects(queryUrl, (response) => {
+                downloadFile(queryUrl, response, res);
             });
         } catch (err) {
             myConsole.error(err);
@@ -46,4 +52,7 @@ const server = http.createServer((req, res) => {
         res.end("No url parameter provided.");
     }
 });
-server.listen();
+const PORT = process.env.PORT || 3001;
+server.listen(PORT, () => {
+    myConsole.log("Proxy listening on port " + PORT + "\n");
+});

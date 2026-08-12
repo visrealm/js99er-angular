@@ -1,5 +1,15 @@
 AddType application/x-httpd-php-old .php
+AddType application/wasm .wasm
 
 <filesMatch ".(html|json)$">
 Header set Cache-Control "max-age=0, public"
 </filesMatch>
+
+RewriteEngine On
+
+# Angular SPA fallback — serve index.html for routes that aren't real files
+# or directories. /proxy is handled by the cPanel Node.js app (Passenger),
+# which intercepts before mod_rewrite, so no explicit exclusion needed.
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^ index.html [L]
