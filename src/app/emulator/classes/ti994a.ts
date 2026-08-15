@@ -340,7 +340,8 @@ export class TI994A implements Console, Stateful {
     frame(skipBreakpoint?: boolean) {
         const cpuSpeed = this.cpuSpeed;
         const scanlineCount = this.vdp.getScanlineCount();
-        const cyclesPerScanline = (TMS9900.CYCLES_PER_FRAME / scanlineCount) * cpuSpeed;
+        // Scanline count is visible lines only, so scale per scanline to keep the blanking lines
+        const cyclesPerScanline = TMS9900.CYCLES_PER_SCANLINE * cpuSpeed * (240 / scanlineCount);
         let cyclesToRun = TMS9900.CYCLES_PER_FRAME * cpuSpeed;
         const f18ACyclesPerScanline = F18AGPU.CYCLES_PER_SCANLINE * (240 / scanlineCount);
         let extraCycles = 0;
