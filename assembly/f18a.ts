@@ -115,7 +115,6 @@ export function drawScanline(
         const borderWidth: i32 = screenMode === MODE_TEXT ? 8 : (screenMode === MODE_TEXT_80 ? 16 : 0);
         scrollWidth -= (borderWidth << 1);
         // Prepare values for Tile layer 1
-        const nameTableCanonicalBase: i32 = vPageSize1 ? nameTable & 0x3000 : (hPageSize1 ? nameTable & 0x3800 : nameTable);
         let nameTableBaseAddr: i32 = nameTable;
         let y1: i32 = y + vScroll1;
         if (y1 >= scrollHeight) {
@@ -139,12 +138,10 @@ export function drawScanline(
         const lineOffset: i32 = y1 & 7;
         // Prepare values for Tile layer 2
         let rowOffset2: i32 = 0,
-            nameTableCanonicalBase2: i32 = 0,
             nameTableBaseAddr2: i32 = 0,
             lineOffset2: i32 = 0,
             y12: i32 = 0;
         if (tileLayer2Enabled) {
-            nameTableCanonicalBase2 = vPageSize2 ? nameTable2 & 0x3000 : (hPageSize2 ? nameTable2 & 0x3800 : nameTable2);
             nameTableBaseAddr2 = nameTable2;
             y12 = y + vScroll2;
             if (y12 >= scrollHeight) {
@@ -197,7 +194,6 @@ export function drawScanline(
                         y1,
                         rowOffset,
                         lineOffset,
-                        nameTableCanonicalBase,
                         nameTableBaseAddr,
                         colorTable,
                         borderWidth,
@@ -257,7 +253,6 @@ export function drawScanline(
                         y1,
                         rowOffset2,
                         lineOffset2,
-                        nameTableCanonicalBase2,
                         nameTableBaseAddr2,
                         colorTable2,
                         borderWidth,
@@ -335,7 +330,6 @@ function drawTileLayer(
     y1: i32,
     rowOffset: i32,
     lineOffset: i32,
-    nameTableCanonicalBase: i32,
     nameTableBaseAddr: i32,
     colorTable: i32,
     borderWidth: i32,
@@ -381,7 +375,7 @@ function drawTileLayer(
             bitShift = x1 & 7;
             lineOffset1 = lineOffset;
             if (tileColorMode !== COLOR_MODE_NORMAL) {
-                tileAttributeByte = getRAMByte(colorTable + (ecmPositionAttributes ? nameTableAddr - nameTableCanonicalBase : charNo));
+                tileAttributeByte = getRAMByte((ecmPositionAttributes ? (colorTable + (nameTableAddr & 0xfff)) & 0x3fff : colorTable + charNo));
                 tilePriority = (tileAttributeByte & 0x80) !== 0;
                 if ((tileAttributeByte & 0x40) !== 0) {
                     // Flip X
@@ -444,7 +438,7 @@ function drawTileLayer(
                 bitShift = x1 % 6;
                 lineOffset1 = lineOffset;
                 if (tileColorMode !== COLOR_MODE_NORMAL) {
-                    tileAttributeByte = getRAMByte(colorTable + (ecmPositionAttributes ? nameTableAddr - nameTableCanonicalBase : charNo));
+                    tileAttributeByte = getRAMByte((ecmPositionAttributes ? (colorTable + (nameTableAddr & 0xfff)) & 0x3fff : colorTable + charNo));
                     tilePriority = (tileAttributeByte & 0x80) !== 0;
                     if ((tileAttributeByte & 0x40) !== 0) {
                         // Flip X
@@ -462,7 +456,7 @@ function drawTileLayer(
                 switch (tileColorMode) {
                     case COLOR_MODE_NORMAL:
                         if (unlocked && ecmPositionAttributes) {
-                            tileAttributeByte = getRAMByte(colorTable + nameTableAddr - nameTableCanonicalBase);
+                            tileAttributeByte = getRAMByte((colorTable + (nameTableAddr & 0xfff)) & 0x3fff);
                             tileColor = (patternByte & bit) !== 0 ? tileAttributeByte >> 4 : tileAttributeByte & 0xF;
                         } else {
                             tileColor = (patternByte & bit) !== 0 ? fgColor : bgColor;

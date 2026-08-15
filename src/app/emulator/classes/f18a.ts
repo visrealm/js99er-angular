@@ -450,7 +450,27 @@ export class F18A implements VDP {
     drawScanline(y: number) {
         this.currentScanline = y >= this.topBorder ? y - this.topBorder : 255;
         this.blanking = (y < this.topBorder || y >= this.topBorder + this.drawHeight) ? 1 : 0;
+        this.callDrawScanline(y);
+        this.blanking = 1; // GPU code after scanline may depend on this
+        if (this.reportMax) {
+            this.statusRegister = (this.statusRegister & 0xe0) | this.registers[30];
+        }
+        if (this.gpuHsyncTrigger && this.gpu.isIdle()) {
+            this.gpu.setIdle(false);
+        }
+        if (y === this.topBorder + this.drawHeight - 1) {
+            this.statusRegister |= 0x80;
+            if (this.interruptsOn) {
+                this.cru.setVDPInterrupt(true);
+            }
+            if (this.gpuVsyncTrigger && this.gpu.isIdle()) {
+                this.gpu.setIdle(false);
+            }
+            this.frameCounter++;
+        }
+    }
 
+    callDrawScanline(y: number) {
         this.statusRegister = this.wasmService.getExports().drawScanlineF18a(
             y,
             this.canvasWidth,
@@ -514,26 +534,6 @@ export class F18A implements VDP {
             this.isDoubledV(),
             this.isPico9918
         );
-
-        this.blanking = 1; // GPU code after scanline may depend on this
-
-        if (this.reportMax) {
-            this.statusRegister = (this.statusRegister & 0xe0) | this.registers[30];
-        }
-
-        if (this.gpuHsyncTrigger && this.gpu.isIdle()) {
-            this.gpu.setIdle(false);
-        }
-        if (y === this.topBorder + this.drawHeight - 1) {
-            this.statusRegister |= 0x80;
-            if (this.interruptsOn) {
-                this.cru.setVDPInterrupt(true);
-            }
-            if (this.gpuVsyncTrigger && this.gpu.isIdle()) {
-                this.gpu.setIdle(false);
-            }
-            this.frameCounter++;
-        }
     }
 
     drawInvisibleScanline(y: number): void {
@@ -995,6 +995,8 @@ export class F18A implements VDP {
     }
 
     readStatus(): number {
+        this.dataPortMode = false;
+        this.latch = false; // TODO: According to Matthew
         switch (this.statusRegisterNo) {
             case 0:
                 // Normal status
@@ -1035,6 +1037,9 @@ export class F18A implements VDP {
             case 11:
                 // Counter seconds MSB
                 return ((this.counterSnap / 1000) & 0xff00) >> 8;
+            case 12:
+                // PICO9918 config / version
+                return this.getStatusRegister12();
             case 14:
                 // Version
                 return this.getVersion();
@@ -1042,7 +1047,6 @@ export class F18A implements VDP {
                 // Status register number
                 return this.registers[15];
         }
-        this.latch = false; // TODO: According to Matthew
         return 0;
     }
 
@@ -1184,6 +1188,10 @@ export class F18A implements VDP {
         return 0xe0;
     }
 
+    protected getStatusRegister12(): number {
+        return 0x00;
+    }
+
     protected isDoubledH(): boolean {
         return false;
     }
@@ -1266,7 +1274,7 @@ export class F18A implements VDP {
             pixelOffset: number,
             color: number,
             rgbColor: number[],
-            imageDataAddr = 0;
+            imgDataAddr = 0;
         for (let y = 0; y < baseHeight; y++) {
             rowNameOffset = (y >> 3) << 5;
             lineOffset = y & 7;
@@ -1325,6 +1333,7 @@ export class F18A implements VDP {
                         color = (patternByte & (0x80 >> (x & 7))) !== 0 ? (colorByte & 0xF0) >> 4 : colorByte & 0x0F;
                         break;
                     case F18A.MODE_TEXT:
+                    case F18A.MODE_TEXT_80:
                         name = rowNameOffset + (x >> 3);
                         patternByte = ram[charPatternTable + (name << 3) + lineOffset];
                         if (pixelOffset < 6) {
@@ -1335,16 +1344,16 @@ export class F18A implements VDP {
                         break;
                 }
                 rgbColor = palette[color];
-                imageDataData[imageDataAddr++] = rgbColor[0]; // R
-                imageDataData[imageDataAddr++] = rgbColor[1]; // G
-                imageDataData[imageDataAddr++] = rgbColor[2]; // B
-                imageDataData[imageDataAddr++] = 255; // Alpha
+                imageDataData[imgDataAddr++] = rgbColor[0]; // R
+                imageDataData[imgDataAddr++] = rgbColor[1]; // G
+                imageDataData[imgDataAddr++] = rgbColor[2]; // B
+                imageDataData[imgDataAddr++] = 255; // Alpha
                 if (gap && pixelOffset === 7) {
-                    imageDataAddr += 4;
+                    imgDataAddr += 4;
                 }
             }
             if (gap && lineOffset === 7) {
-                imageDataAddr += width * 4;
+                imgDataAddr += width * 4;
             }
         }
         canvasContext.putImageData(imageData, 0, 0);
@@ -1585,7 +1594,7 @@ export class F18A implements VDP {
             pixelOn: boolean,
             colorMapEntry: {paletteBaseIndex: number, baseColor: number},
             rgbColor: number[],
-            imageDataAddr = 0;
+            imgDataAddr = 0;
         for (let i = 0; (row30 || ram[spriteAttributeTable + i] !== 0xd0) && i < maxSpriteAttrAddr; i += 4) {
             if (ram[spriteAttributeTable + i] < drawHeight) {
                 baseColor = ram[spriteAttributeTable + i + 3] & 0x0f;
@@ -1654,16 +1663,16 @@ export class F18A implements VDP {
                 } else {
                    rgbColor = [224, 224, 255];
                 }
-                imageDataData[imageDataAddr++] = rgbColor[0]; // R
-                imageDataData[imageDataAddr++] = rgbColor[1]; // G
-                imageDataData[imageDataAddr++] = rgbColor[2]; // B
-                imageDataData[imageDataAddr++] = 255; // Alpha
+                imageDataData[imgDataAddr++] = rgbColor[0]; // R
+                imageDataData[imgDataAddr++] = rgbColor[1]; // G
+                imageDataData[imgDataAddr++] = rgbColor[2]; // B
+                imageDataData[imgDataAddr++] = 255; // Alpha
                 if (gap && pixelOffset === 7 && (x & 8) === 8) {
-                    imageDataAddr += 4;
+                    imgDataAddr += 4;
                 }
             }
             if (gap && lineOffset === 7 && (y & 8) === 8) {
-                imageDataAddr += width * 4;
+                imgDataAddr += width * 4;
             }
         }
         canvasContext.putImageData(imageData, 0, 0);

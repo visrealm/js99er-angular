@@ -89,18 +89,12 @@ export class PICO9918 extends F18A {
         }
     }
 
-    override readStatus(): number {
-        // VR15 controls which status register is selected
-        const statusRegNo = this.registers[15];
-
-        // Handle SR12 for config
-        if (statusRegNo === 12 && this.config) {
-            const configIndex = this.registers[58];
-            return this.config.getValue(configIndex);
+    protected override getStatusRegister12(): number {
+        // SR12 returns the config option selected by VR58
+        if (this.config) {
+            return this.config.getValue(this.registers[58]);
         }
-
-        // Fall back to parent implementation
-        return super.readStatus();
+        return super.getStatusRegister12();
     }
 
     private handleFlashOperation(flashReg: number) {
