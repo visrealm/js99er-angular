@@ -718,10 +718,16 @@ export class F18A implements VDP {
                 this.vPageSize1 = (this.registers[29] & 0x01) << 11;
                 this.hPageSize2 = (this.registers[29] & 0x20) << 5;
                 this.vPageSize2 = (this.registers[29] & 0x10) << 7;
-                this.spritePlaneOffset = 0x100 << (3 - ((this.registers[29] & 0xC0) >> 6));
-                this.log.info("Sprite plane offset: " + Util.toHexWord(this.spritePlaneOffset));
-                this.tilePlaneOffset = 0x100 << (3 - ((this.registers[29] & 0x0C) >> 2));
-                this.log.info("Tile plane offset: " + Util.toHexWord(this.tilePlaneOffset));
+                const newSpritePlaneOffset = 0x100 << (3 - ((this.registers[29] & 0xC0) >> 6));
+                if (newSpritePlaneOffset !== this.spritePlaneOffset) {
+                    this.spritePlaneOffset = newSpritePlaneOffset;
+                    this.log.info("Sprite plane offset: " + Util.toHexWord(this.spritePlaneOffset));
+                }
+                const newTilePlaneOffset = 0x100 << (3 - ((this.registers[29] & 0x0C) >> 2));
+                if (newTilePlaneOffset !== this.tilePlaneOffset) {
+                    this.tilePlaneOffset = newTilePlaneOffset;
+                    this.log.info("Tile plane offset: " + Util.toHexWord(this.tilePlaneOffset));
+                }
                 break;
             // Max displayable sprites on a scanline
             // Setting this to 0 restores the jumper value (4 or 32). Here assumed to be 32.
@@ -731,11 +737,11 @@ export class F18A implements VDP {
                 if (this.registers[30] === 0) {
                     this.registers[30] = F18A.MAX_SCANLINE_SPRITES_JUMPER ? 31 : 4;
                 }
-                this.maxScanlineSprites = this.registers[30];
-                if (this.maxScanlineSprites === 31) {
-                    this.maxScanlineSprites = 32;
+                const newMaxScanlineSprites = this.registers[30] === 31 ? 32 : this.registers[30];
+                if (newMaxScanlineSprites !== this.maxScanlineSprites) {
+                    this.maxScanlineSprites = newMaxScanlineSprites;
+                    this.log.info("Max scanline sprites set to " + this.maxScanlineSprites);
                 }
-                this.log.info("Max scanline sprites set to " + this.maxScanlineSprites);
                 break;
             // Bitmap control
             case 31:
@@ -775,15 +781,14 @@ export class F18A implements VDP {
                 break;
             // Palette control
             case 47:
-                this.dataPortMode = (this.registers[47] & 0x80) !== 0;
+                const newDataPortMode = (this.registers[47] & 0x80) !== 0;
+                if (newDataPortMode !== this.dataPortMode) {
+                    this.log.info(this.getType() + " Data port mode " + (newDataPortMode ? "on" : "off") + ".");
+                }
+                this.dataPortMode = newDataPortMode;
                 this.autoIncPaletteReg = (this.registers[47] & 0x40) !== 0;
                 this.paletteRegisterNo = this.registers[47] & 0x3f;
                 this.paletteRegisterData = -1;
-                if (this.dataPortMode) {
-                    this.log.info(this.getType() + " Data port mode on.");
-                } else {
-                    this.log.info(this.getType() + " Data port mode off.");
-                }
                 break;
             // SIGNED two's-complement increment amount for VRAM address, defaults to 1
             case 48:
@@ -798,14 +803,20 @@ export class F18A implements VDP {
                     this.setDimensions(false);
                     this.log.info("30 rows mode " + (this.row30Enabled ? "enabled" : "disabled") + ".");
                 }
-                this.tileColorMode = (this.registers[49] & 0x30) >> 4;
-                this.log.info(this.getType() + " Enhanced Color Mode " + this.tileColorMode + " selected for tiles.");
+                const newTileColorMode = (this.registers[49] & 0x30) >> 4;
+                if (newTileColorMode !== this.tileColorMode) {
+                    this.tileColorMode = newTileColorMode;
+                    this.log.info(this.getType() + " Enhanced Color Mode " + this.tileColorMode + " selected for tiles.");
+                }
                 this.realSpriteYCoord = (this.registers[49] & 0x08) !== 0;
                 if (this.getVersion() <= 0x18) {
                     this.spriteLinkingEnabled = (this.registers[49] & 0x04) !== 0;
                 }
-                this.spriteColorMode = this.registers[49] & 0x03;
-                this.log.info(this.getType() + " Enhanced Color Mode " + this.spriteColorMode + " selected for sprites.");
+                const newSpriteColorMode = this.registers[49] & 0x03;
+                if (newSpriteColorMode !== this.spriteColorMode) {
+                    this.spriteColorMode = newSpriteColorMode;
+                    this.log.info(this.getType() + " Enhanced Color Mode " + this.spriteColorMode + " selected for sprites.");
+                }
                 break;
             // Position vs name attributes, TL2 always on top
             case 50:
